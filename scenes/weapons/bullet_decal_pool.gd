@@ -10,7 +10,12 @@ static var pool_initialized := false
 static func initialize_pool(parent: Node3D) -> void:
 	"""Pre-spawn all decals upfront to avoid lag on first fire"""
 	if pool_initialized:
-		return
+		# After a scene reload the nodes are freed but statics persist — detect and reset
+		if decal_pool.size() > 0 and not is_instance_valid(decal_pool[0]):
+			decal_pool.clear()
+			pool_initialized = false
+		else:
+			return
 	
 	print("Initializing bullet decal pool with ", MAX_BULLET_DECALS, " decals")
 	for i in range(MAX_BULLET_DECALS):
@@ -39,7 +44,10 @@ static func spawn_bullet_decal(global_pos: Vector3, normal: Vector3, parent: Nod
 	else:
 		print("ERROR: Decal pool empty!")
 		return null
-	
+
+	if not is_instance_valid(decal_instance):
+		return null
+
 	# Reset and setup the decal
 	decal_instance.show()
 	if decal_instance.has_method("setup_decal"):

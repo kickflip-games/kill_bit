@@ -10,6 +10,7 @@ class_name BaseEnemy
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
 @onready var health = $Health
 @onready var hit_particles: GPUParticles3D = get_node_or_null("HitParticles")
+@onready var sprite_3d: Sprite3D = $Sprite3D
 
 var player : Node3D
 var is_dead : bool = false
@@ -18,6 +19,16 @@ var damage_taken : float = 0.0  # Track total damage for blood intensity
 var last_blood_spray_time : float = -1.0  # Cooldown tracker
 
 func _ready() -> void:
+	# Add to enemies group for GameManager communication
+	add_to_group("enemies")
+	
+	# Validate nav agent exists
+	assert(nav_agent != null, "NavigationAgent3D not found on enemy!")
+	
+	# Fallback player lookup if not set yet
+	if player == null:
+		player = get_tree().get_first_node_in_group("player")
+	
 	if anim_player.has_animation("idle"):
 		anim_player.play("idle")
 	
@@ -34,7 +45,19 @@ func take_damage(amount):
 		hit_particles.restart()
 		hit_particles.emitting = true
 	health.take_damage(amount)
+	Log.dbg("Enemy took damage", {"enemy": name, "amount": amount, "hp_remaining": health.current_health})
+	SoundManager.play_sfx(SoundManager.SFX_PLAYER_HIT_ENEMY)
+	SoundManager.play_sfx(SoundManager.SFX_ENEMY_TAKES_DAMAGE)
 	_apply_hit_stun()
+	_play_hit_flash()
+
+func _play_hit_flash() -> void:
+	var mat := sprite_3d.material_override as ShaderMaterial
+	if not mat:
+		return
+	mat.set_shader_parameter("active", 1.0)
+	var tween := create_tween()
+	tween.tween_property(mat, "shader_parameter/active", 0.0, 0.15).set_ease(Tween.EASE_OUT)
 
 func _apply_hit_stun():
 	is_stunned = true
@@ -64,9 +87,16 @@ func _on_health_died():
 
 func die():
 	is_dead = true
+	Log.info("Enemy died", {"enemy": name, "total_damage_taken": damage_taken, "kill_count": GameManager.kill_count + 1})
+	GameManager.register_kill()
+	SoundManager.play_enemy_death()
 	# Disable collision so the player can walk through the "corpse"
 	collision_layer = 0
 	collision_mask = 0
+	# Disable hurtbox so it stops dealing damage during the die animation
+	var hurtbox = get_node_or_null("Hurtbox")
+	if hurtbox:
+		hurtbox.set_deferred("monitoring", false)
 	
 	# Spawn blood decals with damage intensity
 	var death_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD

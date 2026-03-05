@@ -61,7 +61,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.062983, -0.49438572, 6.981
 
 [node name="Zombie" parent="." unique_id=354697016 instance=ExtResource("8_ewkxc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.939799, -0.3245337, 2.7740295)
-visible = false
 move_speed = 1.5
 acceleration = 3.0
 

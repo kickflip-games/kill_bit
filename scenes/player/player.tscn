@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://bwclduea7lrdp" path="res://scenes/player/hands.png" id="4_p47bc"]
 [ext_resource type="Texture2D" uid="uid://b4hxf7cxdcl71" path="res://scenes/player/reticle.png" id="5_75vfm"]
 [ext_resource type="Texture2D" uid="uid://dsvuti1bko427" path="res://scenes/player/hurt_vignette.png" id="6_vignette"]
+[ext_resource type="Shader" uid="uid://v7ye1wic67u1" path="res://scenes/player/speedlines.gdshader" id="7_speedlines"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.25
@@ -49,9 +50,27 @@ _data = {
 &"shoot": SubResource("Animation_xivtj")
 }
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_speed"]
+frequency = 0.05
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_speed"]
+noise = SubResource("FastNoiseLite_speed")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_speed"]
+shader = ExtResource("7_speedlines")
+shader_parameter/noise = SubResource("NoiseTexture2D_speed")
+shader_parameter/line_color = Color(1, 1, 1, 0.85)
+shader_parameter/line_count = 0.5
+shader_parameter/line_density = 0.0
+shader_parameter/line_faloff = 0.25
+shader_parameter/mask_size = 0.1
+shader_parameter/mask_edge = 0.5
+shader_parameter/animation_speed = 10.0
+
 [node name="Player" type="CharacterBody3D" unique_id=865191397]
 collision_layer = 4
-collision_mask = 3
+collision_mask = 35
 script = ExtResource("1_8afob")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1476398568]
@@ -65,6 +84,7 @@ debug_color = Color(0.9137255, 0, 0.13333334, 1)
 [node name="Weapon" parent="." unique_id=1064344690 instance=ExtResource("3_gmlin")]
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=920206850]
+process_mode = 3
 script = ExtResource("4_75vfm")
 
 [node name="Control" type="Control" parent="Hud" unique_id=187724588]
@@ -109,6 +129,29 @@ offset_right = 100.0
 offset_bottom = 40.0
 theme_override_font_sizes/font_size = 32
 text = "10"
+
+[node name="AmmoLabel" type="Label" parent="Hud" unique_id=999000004]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_right = 0.0
+offset_bottom = 40.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 32
+text = "30/30"
+horizontal_alignment = 2
+
+[node name="SpeedlinesOverlay" type="ColorRect" parent="Hud" unique_id=999000003]
+visible = false
+material = SubResource("ShaderMaterial_speed")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
 
 [node name="VignetteOverlay" type="TextureRect" parent="Hud" unique_id=999000002]
 anchors_preset = 15
@@ -158,6 +201,44 @@ text = "Start"
 [node name="OptionsButton" type="Button" parent="Hud/StartScreen/PanelContainer/VBoxContainer" unique_id=1708959119]
 layout_mode = 2
 text = "Options"
+
+[node name="PauseScreen" type="Control" parent="Hud" unique_id=888000001]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Hud/PauseScreen" unique_id=888000002]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -100.0
+offset_right = 160.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Hud/PauseScreen/PanelContainer" unique_id=888000003]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PauseTitle" type="Label" parent="Hud/PauseScreen/PanelContainer/VBoxContainer" unique_id=888000004]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="Hud/PauseScreen/PanelContainer/VBoxContainer" unique_id=888000005]
+layout_mode = 2
+text = "Resume"
 
 [node name="EndScreen" type="Control" parent="Hud" unique_id=401472792]
 visible = false

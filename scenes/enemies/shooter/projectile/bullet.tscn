@@ -101,6 +101,7 @@ draw_pass_1 = SubResource("PlaneMesh_sparks")
 collision_layer = 4
 collision_mask = 5
 script = ExtResource("3_ih1i6")
+delete_after = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=364525086]
 shape = SubResource("SphereShape3D_qccy3")

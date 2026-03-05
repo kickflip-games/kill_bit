@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://n5yug1lo4exy"]
+
+[ext_resource type="Script" uid="uid://8wegk0do0bd" path="res://scenes/pickups/pickup.gd" id="1_p3l0o"]
+[ext_resource type="Texture2D" uid="uid://df7g0rewmaqlb" path="res://scenes/pickups/pickups.png" id="2_itxnx"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_itxnx"]
+
+[node name="Pickup" type="Area3D" unique_id=1585829967]
+collision_layer = 32
+collision_mask = 2
+script = ExtResource("1_p3l0o")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1693454166]
+shape = SubResource("SphereShape3D_itxnx")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1644977038]
+billboard = 2
+texture = ExtResource("2_itxnx")
+hframes = 3
+vframes = 3
+frame = 3

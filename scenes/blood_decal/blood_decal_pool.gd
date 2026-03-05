@@ -11,7 +11,12 @@ static var pool_initialized := false
 static func initialize_pool(parent: Node3D) -> void:
 	"""Pre-spawn all blood decals upfront"""
 	if pool_initialized:
-		return
+		# After a scene reload the nodes are freed but statics persist — detect and reset
+		if decal_pool.size() > 0 and not is_instance_valid(decal_pool[0]):
+			decal_pool.clear()
+			pool_initialized = false
+		else:
+			return
 	
 	print("Initializing blood decal pool with ", MAX_BLOOD_DECALS, " decals")
 	for i in range(MAX_BLOOD_DECALS):
@@ -91,7 +96,10 @@ static func _spawn_blood_decal(global_pos: Vector3, normal: Vector3, intensity: 
 	# Get decal from pool (recycle oldest)
 	var decal_instance = decal_pool.pop_front()
 	decal_pool.push_back(decal_instance)
-	
+
+	if not is_instance_valid(decal_instance):
+		return
+
 	# Reset and setup the decal
 	decal_instance.show()
 	if decal_instance.has_method("setup_decal"):

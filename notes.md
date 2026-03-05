@@ -4,77 +4,80 @@
 
 ## Phase 1 — Core Combat Feel
 
-### Hit-Stun Mechanics
+### ✅ Hit-Stun Mechanics
 
-Enemies physically stop moving (speed = 0) for ~0.2s when hit to reward the player.
+Enemies stop moving (speed = 0) for 0.2s on hit. `is_stunned` flag blocks movement in both MeleeEnemy and EnemyShooter. Duration exported per-enemy.
 
-### Screen Shake
+### ✅ Screen Shake
 
-Implement varied intensities for firing weapons vs. taking damage.
+Fire shake (0.018) and damage shake (0.05) via `_shake_camera()` in player. Decays with `lerpf`, stacks via `maxf` so damage hits don't get wiped by rapid fire.
 
-### Impact Pause
+### ✅ Impact Pause
 
-Briefly freeze the game world (Time Scale = 0) for ~0.02s on a critical kill for "crunchy" feedback.
+Every 5th kill freezes `Engine.time_scale = 0` for 0.02s via a real-time timer (`ignore_time_scale = true`) in `GameManager`. Trivial to swap "every 5th kill" for "critical kill" later.
 
-### Hit-Stun Visuals
+### ✅ Hit-Stun Visuals
 
-Sprite "whitens" (via modulate or shader) for 0.05s upon taking damage.
+Spatial shader (`hit_flash.gdshader`) on enemy `Sprite3D` fades active 1→0 over 0.15s via Tween with EASE_OUT. `resource_local_to_scene = true` ensures per-enemy flash.
 
-### Audio Feedback
+### ✅ Audio Feedback
 
-Distinct, punchy SFX for: gun shot, bullet impact (flesh vs. wall), enemy death. Audio is as important as visuals for making hits feel real.
+Full SFX pass via `SoundManager` autoload. Covered: player shoot, bullet hits environment, player hit enemy, enemy takes damage, enemy death (randomised between 2), enemy shoots, player takes damage, player death, pickup, pause/unpause, win. Background music loops from game load.
+
+### ✅ Pause Screen
+
+ESC toggles pause via HUD (process_mode = ALWAYS). `get_tree().paused = true` freezes all game nodes. Resume button + ESC to unpause. Auto-unpauses on death.
 
 ---
 
 ## Phase 2 — Enemy AI
 
-### Zombie (Melee) AI
+### ✅ Basic Melee & Shooter AI
 
-**The Flank:** Targets a random offset around the player to prevent enemies from clumping into a single line.
+Melee enemies navigate to player via NavigationAgent3D. Shooter strafes toward player and fires projectiles at fire_rate. Both respect `is_stunned` and `is_dead`.
 
-**The Lunge:** Sudden speed burst when the enemy is within 3 meters to catch the player off-guard.
+### ✅ Zombie (Melee) AI — Polish
 
-### Shooter AI
+**The Flank:** Targets a random offset around the player and updates every 1 second to prevent clumping. Exported as `flank_radius` and `flank_update_interval`.
 
-**Strafe & Shoot:** Moves laterally while firing to remain a harder target for the player to hit.
+**The Lunge:** Sudden speed burst (1.8x) when within 3 meters. `lunge_distance` and `lunge_speed_multiplier` are tunable via exports.
 
-**Predictive Aim:** Fires at the player's projected path based on current velocity, rather than their current position.
+**Enemy Avoidance:** Zombies detect nearby enemies within `avoid_radius` and push away from them to prevent stacking. `avoid_strength` controls how much they weight avoidance vs. flanking.
 
-### Enemy Spawning
+### ✅ Shooter AI — Polish
 
-Spawn manager with wave-based or proximity-triggered spawning. Enemies should feel like they're coming from somewhere, not just appearing.
+**Strafe & Shoot:** Shooters maintain distance while circling the player. `strafe_radius` controls circle size, `strafe_speed` is randomized per enemy (1.5-2.5 rad/s), and direction is randomized (clockwise/counterclockwise).
+
+**Enemy Avoidance:** Shooters use the same avoidance system as melees to prevent clustering.
 
 ---
 
 ## Phase 3 — Movement & Player Polish
 
-### Weapon Sway & Bob
+### ✅ Speed Lines
 
-Gun moves in a figure-eight pattern while walking and leans into turns (Sway) to feel attached to the player's movement.
+Canvas-item shader overlay (`speedlines.gdshader`) driven by player velocity. Density remapped from 4.2→MAX_SPEED via `hud.gd`. Smooth lerp in/out. Vignette renders on top.
 
-### Dynamic FOV
+### ✅ Weapon Sway & Bob
 
-Slightly increase Field of View when at maximum move speed to heighten the sensation of velocity.
+Gun moves in a figure-eight pattern while walking and leans into turns. Camera tilts in direction of turns for enhanced speed feeling. Gun sprite rotates with camera tilt to maintain visual cohesion.
 
-### Speed Lines
+### ✅ Dynamic FOV
 
-GPU Particles (long thin white lines) on Camera3D that trigger at high velocity.
+Slightly increase Field of View at max move speed.
 
 ### Footstep Audio
 
-Sound cues tied to player movement speed and surface type. Sells physicality of movement.
+Sound cues tied to player movement speed and surface type.
 
 ---
 
 ## Phase 4 — World & Content
 
-### Pickups
+### ✅ Pickups
 
-Area3D items (Ammo/Health) featuring spinning billboard sprites.
+Area3D with `@tool` script. Sprite frame set by `PickupType` (HEALTH/AMMO) via spritesheet. Bobbing animation. Calls `player.add_pickup()` on contact. `SoundManager` plays pickup SFX.
 
-### Verticality
-
-Utilize the 2.5D engine to allow for stairs, platforms, and varying floor heights.
 
 ### Procedural Generation
 
@@ -82,28 +85,28 @@ Integrate the SimpleDungeons plugin for randomized, endless dungeon layouts.
 
 ### Doors & Chokepoints
 
-Simple openable doors to create tension and break up sightlines. Even basic sliding doors add a lot to level feel.
+Simple openable doors to create tension and break up sightlines.
 
 ---
 
 ## Phase 5 — Aesthetics & Visuals
 
+### ✅ Blood Decals
+
+Pooled blood decals (`BloodDecalPool`) spawn on enemy hit and death. Intensity scales with damage taken.
+
 ### Sin City Style
 
-High-contrast Black & White palette. Use Bright Red only for blood, hit flashes, and critical UI elements.
+High-contrast Black & White palette. Bright Red only for blood, hit flashes, and critical UI.
 
 ### Comic Book Shaders
 
-Look into toon-shading or halftoning to give the 3D environment a hand-drawn feel.
+Toon-shading or halftoning for a hand-drawn feel.
 
 ### Diegetic UI
 
-High-contrast ammo/health counters (White text on Black) positioned in the world or attached to the weapon model.
-
-### Blood Decals
-
-Persistent red splat decals on walls/floors where enemies are killed. Reinforces the Sin City palette and gives combat history to spaces.
+High-contrast ammo/health counters positioned in-world or on the weapon model.
 
 ### Muzzle Flash
 
-Billboard sprite flash at gun barrel on fire. Should be a single bright-white frame — fast and stark.
+Billboard sprite flash at gun barrel on fire. Single bright-white frame.

@@ -11,6 +11,7 @@ func _ready():
 
 func _on_body_entered(body):
 	if body.has_method("take_damage"):
+		Log.dbg("Hurtbox dealt damage", {"target": body.name, "damage": damage, "source": get_parent().name})
 		body.take_damage(damage)
 		
 		# If this is a persistent attack (melee), start cooldown
