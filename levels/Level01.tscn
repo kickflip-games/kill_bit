@@ -8,7 +8,6 @@
 [ext_resource type="Script" uid="uid://ma4j2xgggf85" path="res://addons/roommate/nodes/out_of_bounds.gd" id="5_qd5dk"]
 [ext_resource type="PackedScene" uid="uid://giwqconkotrq" path="res://scenes/player/player.tscn" id="6_mca4d"]
 [ext_resource type="Texture2D" uid="uid://dq5gwam7f8jrm" path="res://scenes/level_components/textures/wall.png" id="6_qd5dk"]
-[ext_resource type="PackedScene" uid="uid://3hg1hwcymhb" path="res://scenes/enemies/melee/enemy_melee.tscn" id="8_ewkxc"]
 [ext_resource type="PackedScene" uid="uid://bj3yxrf7jpr3g" path="res://scenes/level_components/exit_door/exit_trigger.tscn" id="9_exit"]
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_qd5dk"]
@@ -54,15 +53,10 @@ _surfaces = [{
 [node name="Level01" type="Node3D" unique_id=954698755]
 
 [node name="EnemyShooter" parent="." unique_id=336758649 instance=ExtResource("1_ke2w7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.515767, -0.4499328, 3.26729)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.515767, -0.039479017, 3.26729)
 
 [node name="Player" parent="." unique_id=865191397 instance=ExtResource("6_mca4d")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.062983, -0.49438572, 6.981759)
-
-[node name="Zombie" parent="." unique_id=354697016 instance=ExtResource("8_ewkxc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.939799, -0.3245337, 2.7740295)
-move_speed = 1.5
-acceleration = 3.0
 
 [node name="ExitTrigger" parent="." unique_id=2128425809 instance=ExtResource("9_exit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.680895, 0.15688848, 0)

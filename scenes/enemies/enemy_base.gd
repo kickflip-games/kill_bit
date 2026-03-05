@@ -1,10 +1,34 @@
 extends CharacterBody3D
 class_name BaseEnemy
 
+enum MovementType {
+	STATIONARY,  ## No movement
+	DIRECT,      ## Move directly toward player
+	FLANK,       ## Circle around player with random offset (melee/zombie)
+	STRAFE       ## Orbit player while maintaining distance (shooter)
+}
+
+@export_group("Base Stats")
 @export var move_speed = 1.5
 @export var acceleration = 3.0
 @export var blood_spray_cooldown = 0.2  # Cooldown between damage blood sprays
 @export var hit_stun_duration: float = 0.2
+
+@export_group("Movement")
+@export var movement_type: MovementType = MovementType.DIRECT
+@export var avoid_radius: float = 2.0  ## Distance to avoid other enemies
+@export var avoid_strength: float = 0.5  ## How much to weight avoidance
+
+@export_group("Flank Movement (Melee/Zombie)")
+@export var flank_radius: float = 3.0  ## Distance offset from player
+@export var flank_update_interval: float = 1.0  ## How often to pick new flank position
+@export var lunge_distance: float = 3.0  ## Distance to trigger lunge
+@export var lunge_speed_multiplier: float = 1.8  ## Speed increase when lunging
+
+@export_group("Strafe Movement (Shooter)")
+@export var strafe_radius: float = 5.0  ## How far to orbit from the player
+@export var strafe_speed_min: float = 1.5  ## Min rotation speed (radians/sec)
+@export var strafe_speed_max: float = 2.5  ## Max rotation speed (radians/sec)
 
 @onready var anim_player = $AnimationPlayer
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
@@ -17,6 +41,14 @@ var is_dead : bool = false
 var is_stunned : bool = false
 var damage_taken : float = 0.0  # Track total damage for blood intensity
 var last_blood_spray_time : float = -1.0  # Cooldown tracker
+
+# Movement state
+var nearby_enemies: Array[BaseEnemy] = []
+var flank_offset: Vector3 = Vector3.ZERO
+var flank_timer: float = 0.0
+var strafe_angle: float = 0.0
+var strafe_direction: float = 1.0
+var strafe_speed: float = 2.0
 
 func _ready() -> void:
 	# Add to enemies group for GameManager communication
@@ -34,9 +66,140 @@ func _ready() -> void:
 	
 	# Connect health signals
 	health.died.connect(_on_health_died)
+	
+	# Initialize movement based on type
+	_init_movement()
+	
+	# Setup navigation
+	call_deferred("_setup_navigation")
+
+func _setup_navigation():
+	await get_tree().physics_frame
+	nav_agent.path_desired_distance = 0.5
+	nav_agent.target_desired_distance = 0.5
+
+func _init_movement():
+	match movement_type:
+		MovementType.FLANK:
+			_pick_new_flank_offset()
+		MovementType.STRAFE:
+			strafe_direction = 1.0 if randf() > 0.5 else -1.0
+			strafe_speed = randf_range(strafe_speed_min, strafe_speed_max)
 
 func set_player(p):
 	player = p
+
+func _physics_process(delta: float) -> void:
+	if is_dead or is_stunned or player == null or movement_type == MovementType.STATIONARY:
+		return
+	
+	# Calculate target position based on movement type
+	var target_pos = _calculate_target_position(delta)
+	
+	# Find nearby enemies for avoidance
+	_update_nearby_enemies()
+	
+	# Apply avoidance
+	var avoidance = _calculate_avoidance_adjustment()
+	target_pos += avoidance
+	
+	# Update navigation target (only if changed significantly)
+	if nav_agent.target_position.distance_to(target_pos) > 1.0:
+		nav_agent.target_position = target_pos
+	
+	# Execute movement
+	_execute_movement(delta)
+	
+	move_and_slide()
+
+func _calculate_target_position(delta: float) -> Vector3:
+	match movement_type:
+		MovementType.DIRECT:
+			return player.global_position
+		
+		MovementType.FLANK:
+			# Update flank offset periodically
+			flank_timer += delta
+			if flank_timer >= flank_update_interval:
+				flank_timer = 0.0
+				_pick_new_flank_offset()
+			return player.global_position + flank_offset
+		
+		MovementType.STRAFE:
+			# Continuous orbit
+			strafe_angle += strafe_speed * strafe_direction * delta
+			var strafe_offset = Vector3(
+				cos(strafe_angle) * strafe_radius,
+				0,
+				sin(strafe_angle) * strafe_radius
+			)
+			return player.global_position + strafe_offset
+	
+	return player.global_position
+
+func _execute_movement(delta: float) -> void:
+	if nav_agent.is_navigation_finished():
+		velocity = velocity.lerp(Vector3.ZERO, acceleration * delta)
+		return
+	
+	var next_path_pos = nav_agent.get_next_path_position()
+	
+	# Calculate horizontal direction (project to XZ plane)
+	var my_pos_2d = Vector3(global_position.x, 0, global_position.z)
+	var next_pos_2d = Vector3(next_path_pos.x, 0, next_path_pos.z)
+	var dir = next_pos_2d - my_pos_2d
+	
+	# If waypoint is stuck, move directly toward target
+	if dir.length() < 0.5:
+		var target_2d = Vector3(nav_agent.target_position.x, 0, nav_agent.target_position.z)
+		dir = target_2d - my_pos_2d
+	
+	if dir.length() > 0.5:
+		dir = dir.normalized()
+		
+		# Apply lunge speed boost for FLANK movement
+		var current_speed = move_speed
+		if movement_type == MovementType.FLANK:
+			var distance_to_player = global_position.distance_to(player.global_position)
+			if distance_to_player < lunge_distance:
+				current_speed = move_speed * lunge_speed_multiplier
+		
+		var target_velocity = dir * current_speed
+		velocity = velocity.lerp(target_velocity, acceleration * delta)
+		
+		# Rotate to face movement direction (except strafe which faces player)
+		if movement_type != MovementType.STRAFE:
+			var look_target = Vector3(next_path_pos.x, global_position.y, next_path_pos.z)
+			if global_position.distance_to(look_target) > 0.1:
+				look_at(look_target, Vector3.UP)
+	else:
+		velocity = velocity.lerp(Vector3.ZERO, acceleration * delta)
+
+func _pick_new_flank_offset() -> void:
+	var angle = randf() * TAU
+	flank_offset = Vector3(cos(angle), 0, sin(angle)) * flank_radius
+
+func _update_nearby_enemies() -> void:
+	nearby_enemies.clear()
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if enemy != self and enemy is BaseEnemy:
+			var distance = global_position.distance_to(enemy.global_position)
+			if distance < avoid_radius:
+				nearby_enemies.append(enemy)
+
+func _calculate_avoidance_adjustment() -> Vector3:
+	var adjustment = Vector3.ZERO
+	if nearby_enemies.is_empty():
+		return adjustment
+	
+	for enemy in nearby_enemies:
+		var away_from = global_position.direction_to(enemy.global_position) * -1
+		adjustment += away_from
+	
+	adjustment = (adjustment / nearby_enemies.size()) * avoid_strength
+	adjustment.y = 0
+	return adjustment
 
 func take_damage(amount):
 	if is_dead: return
