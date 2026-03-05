@@ -1,0 +1,106 @@
+[gd_scene format=3 uid="uid://dg066t6d34g22"]
+
+[ext_resource type="Texture2D" uid="uid://tpmjg671jrh4" path="res://scenes/enemies/shooter/projectile/bullet.png" id="1_qccy3"]
+[ext_resource type="Script" uid="uid://djmxp0jsii2u8" path="res://scenes/enemies/shooter/projectile/bullet.gd" id="1_siy71"]
+[ext_resource type="Script" uid="uid://cslg4ovgm0pfo" path="res://scenes/general/hurtbox.gd" id="3_ih1i6"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sparks"]
+shading_mode = 0
+albedo_color = Color(1, 0.7, 0.2, 1)
+billboard_mode = 1
+
+[sub_resource type="Curve" id="Curve_sparks"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_sparks"]
+curve = SubResource("Curve_sparks")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+particle_flag_align_y = true
+emission_shape = 1
+emission_sphere_radius = 0.1
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 1.5
+initial_velocity_max = 3.5
+gravity = Vector3(0, -9.8, 0)
+scale_min = 0.5
+scale_max = 1.5
+scale_curve = SubResource("CurveTexture_sparks")
+color = Color(1, 0.8, 0.3, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_sparks"]
+size = Vector2(0.05, 0.05)
+
+[sub_resource type="Animation" id="Animation_qccy3"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_siy71"]
+resource_name = "idle"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.16666667, 0.33333334, 0.5, 0.6666667, 0.8333333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 2, 1]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ih1i6"]
+_data = {
+&"RESET": SubResource("Animation_qccy3"),
+&"idle": SubResource("Animation_siy71")
+}
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_qccy3"]
+radius = 0.077878624
+
+[node name="Bullet" type="Node3D" unique_id=376300457]
+script = ExtResource("1_siy71")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=893898347]
+billboard = 1
+texture = ExtResource("1_qccy3")
+hframes = 5
+region_enabled = true
+region_rect = Rect2(0, 0, 78, 13)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1240198707]
+libraries/ = SubResource("AnimationLibrary_ih1i6")
+
+[node name="ImpactSparks" type="GPUParticles3D" parent="." unique_id=987654321]
+material_override = SubResource("StandardMaterial3D_sparks")
+emitting = false
+amount = 15
+lifetime = 0.4
+one_shot = true
+explosiveness = 1.0
+randomness = 0.8
+process_material = SubResource("ParticleProcessMaterial_sparks")
+draw_pass_1 = SubResource("PlaneMesh_sparks")
+
+[node name="Hurtbox" type="Area3D" parent="." unique_id=369023434]
+collision_layer = 4
+collision_mask = 5
+script = ExtResource("3_ih1i6")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=364525086]
+shape = SubResource("SphereShape3D_qccy3")

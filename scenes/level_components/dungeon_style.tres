@@ -1,0 +1,7 @@
+[gd_resource type="Resource" format=3 uid="uid://pt1ynkaoyq0o"]
+
+[ext_resource type="Script" uid="uid://bmjoq7txfvxk7" path="res://scenes/level_components/dungeon_style.gd" id="1_osfj4"]
+
+[resource]
+script = ExtResource("1_osfj4")
+metadata/_custom_type_script = "uid://dtunaqtfc50r7"

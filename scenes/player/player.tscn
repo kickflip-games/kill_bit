@@ -1,0 +1,197 @@
+[gd_scene format=3 uid="uid://giwqconkotrq"]
+
+[ext_resource type="Script" uid="uid://71xguttnn0xj" path="res://scenes/player/player.gd" id="1_8afob"]
+[ext_resource type="PackedScene" uid="uid://d0b80m8yh32d4" path="res://scenes/general/health.tscn" id="2_dovo2"]
+[ext_resource type="PackedScene" uid="uid://b2gjcrk62b1x0" path="res://scenes/weapons/weapon.tscn" id="3_gmlin"]
+[ext_resource type="Script" uid="uid://bxqn8v7lvofxb" path="res://scenes/player/hud.gd" id="4_75vfm"]
+[ext_resource type="Texture2D" uid="uid://bwclduea7lrdp" path="res://scenes/player/hands.png" id="4_p47bc"]
+[ext_resource type="Texture2D" uid="uid://b4hxf7cxdcl71" path="res://scenes/player/reticle.png" id="5_75vfm"]
+[ext_resource type="Texture2D" uid="uid://dsvuti1bko427" path="res://scenes/player/hurt_vignette.png" id="6_vignette"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
+radius = 0.25
+height = 1.0
+
+[sub_resource type="Animation" id="Animation_5bwha"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Control/GunSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_xivtj"]
+resource_name = "shoot"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Control/GunSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.13333334, 0.23333333, 0.33333334, 0.43333334),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_xpwvb"]
+_data = {
+&"RESET": SubResource("Animation_5bwha"),
+&"shoot": SubResource("Animation_xivtj")
+}
+
+[node name="Player" type="CharacterBody3D" unique_id=865191397]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_8afob")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1476398568]
+
+[node name="Health" parent="." unique_id=1026362721 instance=ExtResource("2_dovo2")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=198619715]
+shape = SubResource("CapsuleShape3D_dovo2")
+debug_color = Color(0.9137255, 0, 0.13333334, 1)
+
+[node name="Weapon" parent="." unique_id=1064344690 instance=ExtResource("3_gmlin")]
+
+[node name="Hud" type="CanvasLayer" parent="." unique_id=920206850]
+script = ExtResource("4_75vfm")
+
+[node name="Control" type="Control" parent="Hud" unique_id=187724588]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 0
+metadata/_edit_use_anchors_ = true
+
+[node name="GunSprite" type="Sprite2D" parent="Hud/Control" unique_id=1798048827]
+position = Vector2(161, -214)
+texture = ExtResource("4_p47bc")
+hframes = 4
+
+[node name="Reticle" type="TextureRect" parent="Hud" unique_id=120212973]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("5_75vfm")
+metadata/_edit_use_anchors_ = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Hud" unique_id=998041333]
+libraries/ = SubResource("AnimationLibrary_xpwvb")
+
+[node name="HpLabel" type="Label" parent="Hud" unique_id=999000001]
+offset_right = 100.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 32
+text = "10"
+
+[node name="VignetteOverlay" type="TextureRect" parent="Hud" unique_id=999000002]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_vignette")
+expand_mode = 1
+
+[node name="StartScreen" type="Control" parent="Hud" unique_id=443327008]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Hud/StartScreen" unique_id=1939150239]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -140.0
+offset_right = 190.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Hud/StartScreen/PanelContainer" unique_id=194442825]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GameLogo" type="Label" parent="Hud/StartScreen/PanelContainer/VBoxContainer" unique_id=939579032]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "FPS 2D"
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="Hud/StartScreen/PanelContainer/VBoxContainer" unique_id=2053734307]
+layout_mode = 2
+text = "Start"
+
+[node name="OptionsButton" type="Button" parent="Hud/StartScreen/PanelContainer/VBoxContainer" unique_id=1708959119]
+layout_mode = 2
+text = "Options"
+
+[node name="EndScreen" type="Control" parent="Hud" unique_id=401472792]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Hud/EndScreen" unique_id=376127903]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -110.0
+offset_right = 180.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Hud/EndScreen/PanelContainer" unique_id=2138988754]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="EndTitle" type="Label" parent="Hud/EndScreen/PanelContainer/VBoxContainer" unique_id=2722641]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "You Died"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="Hud/EndScreen/PanelContainer/VBoxContainer" unique_id=1706870965]
+layout_mode = 2
+text = "Restart"

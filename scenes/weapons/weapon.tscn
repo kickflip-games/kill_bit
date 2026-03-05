@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://b2gjcrk62b1x0"]
+
+[ext_resource type="Script" uid="uid://bnifwav1gguxr" path="res://scenes/weapons/HitScanWeapon.gd" id="1_nqevj"]
+
+[node name="Weapon" type="Node3D" unique_id=1064344690]
+script = ExtResource("1_nqevj")
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=1413150658]
+target_position = Vector3(0, 0, -50)
+collision_mask = 3
+hit_from_inside = true
+collide_with_areas = true
+debug_shape_custom_color = Color(0, 0.7882353, 0, 1)
+debug_shape_thickness = 3

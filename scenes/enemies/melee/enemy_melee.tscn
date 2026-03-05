@@ -1,0 +1,146 @@
+[gd_scene format=3 uid="uid://3hg1hwcymhb"]
+
+[ext_resource type="Script" uid="uid://dk7bog2e386h2" path="res://scenes/enemies/melee/enemy_melee.gd" id="1_3pt6v"]
+[ext_resource type="Texture2D" uid="uid://0lqbxnkwcjvs" path="res://scenes/enemies/melee/enemy_melee.png" id="2_gl10n"]
+[ext_resource type="Script" uid="uid://cslg4ovgm0pfo" path="res://scenes/general/hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="PackedScene" uid="uid://d0b80m8yh32d4" path="res://scenes/general/health.tscn" id="4_health"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_3pt6v"]
+radius = 0.25
+height = 1.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hit"]
+shading_mode = 0
+albedo_color = Color(0.9, 0.1, 0.1, 1)
+billboard_mode = 1
+
+[sub_resource type="Curve" id="Curve_3v74a"]
+_data = [Vector2(0, 1), 0.0, 1.4, 0, 0, Vector2(1, 0.055149674), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_4bfbx"]
+curve = SubResource("Curve_3v74a")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hit"]
+particle_flag_align_y = true
+emission_shape = 1
+emission_sphere_radius = 0.52
+velocity_pivot = Vector3(0, -20.28, 0)
+direction = Vector3(0, 0, 0)
+spread = 132.02
+flatness = 0.062
+initial_velocity_min = 0.29999998
+initial_velocity_max = 0.79999995
+gravity = Vector3(0, -5, 0)
+scale_min = 0.9
+scale_max = 3.0
+scale_curve = SubResource("CurveTexture_4bfbx")
+color = Color(0.8, 0.1, 0.1, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_hit"]
+size = Vector2(0.1, 0.1)
+
+[sub_resource type="Animation" id="Animation_gl10n"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_rdvt3"]
+resource_name = "die"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(-0.033333335, 0.03333334, 0.16666667, 0.33333334, 0.46666667, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 5, 6, 7, 8, 9]
+}
+
+[sub_resource type="Animation" id="Animation_a0lpg"]
+resource_name = "idle"
+length = 0.8
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4, 0.56666666),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_bgxja"]
+_data = {
+&"RESET": SubResource("Animation_gl10n"),
+&"die": SubResource("Animation_rdvt3"),
+&"idle": SubResource("Animation_a0lpg")
+}
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_f7whk"]
+
+[node name="EnemyMelee" type="CharacterBody3D" unique_id=354697016 groups=["enemies"]]
+collision_layer = 2
+collision_mask = 5
+script = ExtResource("1_3pt6v")
+move_speed = null
+acceleration = null
+metadata/_custom_type_script = "uid://dk7bog2e386h2"
+
+[node name="Health" parent="." unique_id=521497584 instance=ExtResource("4_health")]
+max_health = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1027850575]
+shape = SubResource("CapsuleShape3D_3pt6v")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1399259355]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+billboard = 1
+texture = ExtResource("2_gl10n")
+hframes = 5
+vframes = 2
+
+[node name="HitParticles" type="GPUParticles3D" parent="." unique_id=2015449497]
+transform = Transform3D(0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0, 0.45, 0)
+material_override = SubResource("StandardMaterial3D_hit")
+emitting = false
+amount = 13
+lifetime = 0.7
+one_shot = true
+explosiveness = 1.0
+randomness = 1.0
+process_material = SubResource("ParticleProcessMaterial_hit")
+draw_pass_1 = SubResource("PlaneMesh_hit")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1873251965]
+libraries/ = SubResource("AnimationLibrary_bgxja")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=499247326]
+debug_enabled = true
+
+[node name="Hurtbox" type="Area3D" parent="." unique_id=1017401941]
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("3_hurtbox")
+delete_after = false
+repeat_cooldown = 0.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=1229700242]
+shape = SubResource("SphereShape3D_f7whk")

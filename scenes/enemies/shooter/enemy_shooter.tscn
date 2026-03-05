@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://b55psnniystqb"]
+
+[ext_resource type="Script" uid="uid://bwkckyc8j0xmv" path="res://scenes/enemies/shooter/enemy_shooter.gd" id="1_hbq6r"]
+[ext_resource type="Texture2D" uid="uid://bv0jo5pobui0p" path="res://scenes/enemies/shooter/enemy_shooter.png" id="2_omrtk"]
+[ext_resource type="Script" uid="uid://cslg4ovgm0pfo" path="res://scenes/general/hurtbox.gd" id="2_u3ulv"]
+[ext_resource type="PackedScene" uid="uid://d0b80m8yh32d4" path="res://scenes/general/health.tscn" id="4_health"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gpic1"]
+
+[sub_resource type="Animation" id="Animation_omrtk"]
+resource_name = "die"
+
+[sub_resource type="Animation" id="Animation_tsc5k"]
+resource_name = "idle"
+
+[sub_resource type="Animation" id="Animation_1pjik"]
+resource_name = "shoot"
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_o5pqp"]
+_data = {
+&"die": SubResource("Animation_omrtk"),
+&"idle": SubResource("Animation_tsc5k"),
+&"shoot": SubResource("Animation_1pjik")
+}
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_hbq6r"]
+
+[node name="EnemyShooter" type="CharacterBody3D" unique_id=336758649 groups=["enemies"]]
+collision_layer = 2
+collision_mask = 5
+script = ExtResource("1_hbq6r")
+
+[node name="Health" parent="." unique_id=521497584 instance=ExtResource("4_health")]
+max_health = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1591999081]
+shape = SubResource("CapsuleShape3D_gpic1")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1676316258]
+texture = ExtResource("2_omrtk")
+hframes = 8
+vframes = 12
+region_enabled = true
+region_rect = Rect2(0, 0, 814, 1162)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=903111094]
+libraries/ = SubResource("AnimationLibrary_o5pqp")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=962179148]
+
+[node name="Hurtbox" type="Area3D" parent="." unique_id=1706262128]
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("2_u3ulv")
+delete_after = false
+repeat_cooldown = 0.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=287217916]
+shape = SubResource("SphereShape3D_hbq6r")

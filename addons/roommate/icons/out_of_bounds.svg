@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="out_of_bounds"
+   version="1.1"
+   width="16"
+   height="16"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <path
+     d="M 15.632509,4.1343267 8.5042129,0.13715157 a 1.1058851,1.1058851 0 0 0 -0.9992937,0 L 0.36329966,4.1343267 C -0.30289619,4.5207203 0.04352565,5.3334792 0.8696085,5.3334792 H 1.3359456 V 15.992613 H 14.659863 V 5.3334792 h 0.479661 c 0.85273,0 1.172504,-0.8127589 0.492985,-1.1991525 z"
+     fill="#fc7f7f"
+     id="path1"
+     style="stroke-width:1" />
+</svg>
