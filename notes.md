@@ -112,6 +112,66 @@ High-contrast ammo/health counters positioned in-world or on the weapon model.
 Billboard sprite flash at gun barrel on fire. Single bright-white frame.
 
 
+## Dungeon integration plan
+
+1. Room Scene Architecture (The "Prefab" Setup)
+Each room .tscn must be standardized to ensure the generator doesn't break the logic.
+
+Task: Add a NavigationRegion3D as a child of the Room Root.
+
+Task: Create a NavigationMesh resource for each room.
+
+Task: Bake the NavMesh in the editor. Since rooms are modular, the "floor" is always in the same local position, so the bake remains valid when the room is moved.
+
+Task: Add an Area3D named ActivationArea. Its collision shape should cover the entire room + the doorways.
+
+Detail: Ensure the NavigationRegion3D has its Travel Cost and Layers set correctly so enemies don't try to "walk" into the void between rooms.
+
+2. Enemy "Sleeper" Logic (enemy_base.gd)
+Modify the base class so enemies don't drain resources the moment they are instanced.
+
+Task: Add a setup_as_sleeper() function.
+
+Detail: This function should set process_mode = Node.PROCESS_MODE_DISABLED and hide().
+
+Task: In _ready(), call setup_as_sleeper() if a certain flag (e.g., is_procedural) is true.
+
+Detail: This ensures that when the Dungeon Generator instances 50 rooms at once, the CPU usage stays at 0% for AI.
+
+3. Room Controller Script (RoomManager.gd)
+Create a script to attach to the root of every room prefab to handle the "Wake/Sleep" cycle.
+
+Task: Connect the body_entered and body_exited signals of the ActivationArea.
+
+Task: On body_entered:
+
+Loop through children in the "Enemies" group.
+
+Set process_mode = Node.PROCESS_MODE_INHERIT.
+
+Call show() (Optional, but saves draw calls on Web).
+
+Task: On body_exited:
+
+Set process_mode = Node.PROCESS_MODE_DISABLED.
+
+Call hide().
+
+4. Navigation Map Synchronization
+This is the "magic" step to ensure the NavMesh moves with the room.
+
+Task: Ensure the Dungeon Generator sets the room's global_position before adding it to the SceneTree (or immediately after).
+
+Detail: In Godot 4, NavigationRegion3D automatically registers its global transform with the NavigationServer3D upon entering the tree.
+
+Warning: If you move a room after it has been spawned, you may need to call NavigationServer3D.region_set_transform() or simply toggle the enabled property of the NavigationRegion3D to force a sync.
+
+5. Dungeon Generator Integration
+Task: Update the generator script to call a "Finalize" function on each room after placement.
+
+Detail: The generator should ensure all Area3D collision layers are set so they only detect the Player (Layer 1 or 2), not other enemies or projectiles.
+
+
 ## Inspos
 
 - Sincity comicbooks

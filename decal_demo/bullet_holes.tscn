@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://dji8q0bfwbxqi"]
+
+[ext_resource type="Shader" uid="uid://0ysverksjyo3" path="res://addons/decal_compatibility/decal_instance.gdshader" id="1_ijt08"]
+[ext_resource type="Texture2D" uid="uid://dwwqhljh8l8t3" path="res://decal_demo/assets/decal_textures/bullethole.png" id="2_47ilg"]
+[ext_resource type="Script" uid="uid://bw6heqxc8r4tx" path="res://addons/decal_compatibility/decal_instance_compatibility.gd" id="3_605fm"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_v2kpa"]
+render_priority = 0
+shader = ExtResource("1_ijt08")
+shader_parameter/albedo = ExtResource("2_47ilg")
+shader_parameter/modulate = Color(1, 1, 1, 0.901961)
+shader_parameter/albedo_mix = 0.9
+shader_parameter/scale_mod = Vector3(2, 1, 2)
+shader_parameter/cube_half_size = Vector3(0.25, 0.5, 0.25)
+shader_parameter/enable_y_fade = false
+shader_parameter/fade_start = 0.3
+shader_parameter/fade_end = 0.7
+shader_parameter/fade_power = 1.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_l33fo"]
+material = SubResource("ShaderMaterial_v2kpa")
+size = Vector3(0.5, 1, 0.5)
+
+[sub_resource type="MultiMesh" id="MultiMesh_hp8nf"]
+transform_format = 1
+use_custom_data = true
+instance_count = 10
+mesh = SubResource("BoxMesh_l33fo")
+buffer = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+
+[node name="BulletHoles" type="MultiMeshInstance3D" unique_id=153530022]
+cast_shadow = 0
+gi_lightmap_scale = 0
+multimesh = SubResource("MultiMesh_hp8nf")
+script = ExtResource("3_605fm")
+size = Vector3(0.5, 1, 0.5)
+instance_count = 10
+texture = ExtResource("2_47ilg")
+modulate = Color(1, 1, 1, 0.901961)
+albedo_mix = 0.9
+enable_fade = false
+metadata/_custom_type_script = "uid://bw6heqxc8r4tx"

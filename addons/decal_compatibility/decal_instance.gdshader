@@ -1,0 +1,92 @@
+shader_type spatial;
+//render_mode world_vertex_coords, blend_mix, depth_test_disabled, depth_draw_opaque, cull_front, diffuse_lambert, specular_schlick_ggx;
+render_mode unshaded, cull_disabled, depth_test_disabled, depth_draw_never; // depth_draw_never forces transparent queue so DEPTH_TEXTURE has scene geometry
+
+stencil_mode read, compare_not_equal, 1;
+
+uniform sampler2D DEPTH_TEXTURE : hint_depth_texture ,filter_linear_mipmap;
+
+// Albedo texture, modulate and mix
+uniform sampler2D albedo : source_color, hint_default_transparent, repeat_disable, filter_linear_mipmap_anisotropic;
+uniform vec4 modulate : source_color = vec4(1.0,1.0,1.0,1.0);
+uniform float albedo_mix : hint_range(0.0, 1.0, 0.1) = 1.0;
+
+uniform vec3 scale_mod = vec3(0);
+uniform vec3 cube_half_size = vec3(0);
+
+varying mat4 INV_MODEL_MATRIX;
+varying flat vec4 custom_data;
+
+// Y-axis fade controls
+uniform bool enable_y_fade = true; // Toggle for fade effect
+uniform float fade_start = 0.3; // Where fading begins (0-1)
+uniform float fade_end = 0.7;   // Where fading ends (0-1)
+uniform float fade_power = 1.0; // Curve sharpness
+
+void vertex(){
+	INV_MODEL_MATRIX = inverse(MODEL_MATRIX);
+	custom_data = INSTANCE_CUSTOM;
+}
+
+// Credit: https://stackoverflow.com/questions/32227283/getting-world-position-from-depth-buffer-value
+vec3 world_pos_from_depth(float depth, vec2 screen_uv, mat4 inverse_proj, mat4 inverse_view) {
+	float z = depth * 2.0 - 1.0;
+	vec4 clipSpacePosition;
+
+	#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
+		clipSpacePosition = vec4(screen_uv * 2.0 - 1.0, z, 1.0);
+	#elif CURRENT_RENDERER == RENDERER_MOBILE
+		clipSpacePosition = vec4(screen_uv * 2.0 - 1.0, depth, 1.0);
+	#else // CURRENT_RENDERER == RENDERER_FORWARD_PLUS
+		clipSpacePosition = vec4(screen_uv * 2.0 - 1.0, depth, 1.0);
+	#endif
+
+	vec4 viewSpacePosition = inverse_proj * clipSpacePosition;
+	viewSpacePosition /= viewSpacePosition.w;
+	vec4 worldSpacePosition = inverse_view * viewSpacePosition;
+	return worldSpacePosition.xyz;
+}
+
+float smooth_fade(float y_pos) {
+    float normalized_y = clamp((y_pos + cube_half_size.y) / (2.0 * cube_half_size.y), 0.0, 1.0);
+    float fade_factor = smoothstep(fade_start, fade_end, normalized_y);
+    fade_factor = pow(fade_factor, fade_power);
+    return 1.0 - fade_factor;
+}
+
+bool checkCameraClippingDecal(mat4 inv_view_matrix, mat4 inv_model_matrix) {
+	vec3 camera_world = (inv_view_matrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+	vec4 camera_local = inv_model_matrix * vec4(camera_world, 1.0);
+	return (abs(camera_local.x) < cube_half_size.x) &&
+		(abs(camera_local.y) < cube_half_size.y) &&
+		(abs(camera_local.z) < cube_half_size.z);
+}
+
+void fragment() {
+	if (custom_data.a < 0.001) discard;
+
+	bool clipped = checkCameraClippingDecal(INV_VIEW_MATRIX, INV_MODEL_MATRIX);
+	if (!clipped && !FRONT_FACING) discard;
+	else if (clipped && FRONT_FACING) discard;
+
+	float depth = texture(DEPTH_TEXTURE, SCREEN_UV).x;
+	vec3 world_pos = world_pos_from_depth(depth, SCREEN_UV, INV_PROJECTION_MATRIX, INV_VIEW_MATRIX);
+	vec4 test_pos = INV_MODEL_MATRIX * vec4(world_pos, 1.0);
+
+	if (abs(test_pos.x) > cube_half_size.x ||
+		abs(test_pos.y) > cube_half_size.y ||
+		abs(test_pos.z) > cube_half_size.z) {
+		discard;
+	}
+
+	vec2 NEW_UV = (test_pos.xz * scale_mod.xz) + 0.5;
+
+	float y_fade = 1.0;
+	if (enable_y_fade) {
+		y_fade = smooth_fade(test_pos.y);
+		if (y_fade <= 0.0) discard;
+	}
+
+	ALBEDO = texture(albedo, NEW_UV).rgb * modulate.rgb * y_fade;
+	ALPHA = texture(albedo, NEW_UV).a * modulate.a * albedo_mix * y_fade * custom_data.a;
+}
