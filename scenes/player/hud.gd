@@ -57,6 +57,7 @@ func _ready():
 	$StartScreen/PanelContainer/VBoxContainer/OptionsButton.pressed.connect(_on_options_pressed)
 	$EndScreen/PanelContainer/VBoxContainer/RestartButton.pressed.connect(_on_restart_pressed)
 	$PauseScreen/PanelContainer/VBoxContainer/ResumeButton.pressed.connect(_on_resume_pressed)
+	$PauseScreen/PanelContainer/VBoxContainer/QuitButton.pressed.connect(_on_quit_pressed)
 
 	# Store base gun position
 	if gun_sprite:
@@ -135,6 +136,10 @@ func toggle_pause() -> void:
 
 func _on_resume_pressed() -> void:
 	toggle_pause()
+
+func _on_quit_pressed() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
 
 func _update_speedlines(delta: float) -> void:
 	if not game_started or not speedlines:

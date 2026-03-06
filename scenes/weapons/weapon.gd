@@ -7,7 +7,8 @@ signal ammo_changed(current_ammo: int, max_ammo: int)
 
 @export var max_ammo: int = 30
 
-var current_ammo: int
+
+var current_ammo: int = 30
 
 func _ready():
 	current_ammo = max_ammo
@@ -17,6 +18,7 @@ func fire():
 	pass
 
 func can_shoot() -> bool:
+	
 	return current_ammo > 0
 
 func consume_ammo():

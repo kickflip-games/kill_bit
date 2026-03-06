@@ -1,6 +1,8 @@
 extends CharacterBody3D
 class_name BaseEnemy
 
+const FLOOR_SNAP_LENGTH: float = 0.35
+
 enum MovementType {
 	STATIONARY,  ## No movement
 	DIRECT,      ## Move directly toward player
@@ -41,6 +43,7 @@ var is_dead : bool = false
 var is_stunned : bool = false
 var damage_taken : float = 0.0  # Track total damage for blood intensity
 var last_blood_spray_time : float = -1.0  # Cooldown tracker
+var blood_decals  # BloodDecals
 
 # Movement state
 var nearby_enemies: Array[BaseEnemy] = []
@@ -49,10 +52,13 @@ var flank_timer: float = 0.0
 var strafe_angle: float = 0.0
 var strafe_direction: float = 1.0
 var strafe_speed: float = 2.0
+var _gravity: float = 9.8
 
 func _ready() -> void:
 	# Add to enemies group for GameManager communication
 	add_to_group("enemies")
+	_gravity = float(ProjectSettings.get_setting("physics/3d/default_gravity"))
+	floor_snap_length = FLOOR_SNAP_LENGTH
 	
 	# Validate nav agent exists
 	assert(nav_agent != null, "NavigationAgent3D not found on enemy!")
@@ -60,6 +66,9 @@ func _ready() -> void:
 	# Fallback player lookup if not set yet
 	if player == null:
 		player = get_tree().get_first_node_in_group("player")
+	
+	# Get reference to blood decal manager
+	call_deferred("_get_blood_decal_manager")
 	
 	if anim_player.has_animation("idle"):
 		anim_player.play("idle")
@@ -78,6 +87,12 @@ func _setup_navigation():
 	nav_agent.path_desired_distance = 0.5
 	nav_agent.target_desired_distance = 0.5
 
+func _get_blood_decal_manager():
+	"""Find the BloodDecals in the scene tree"""
+	blood_decals = get_tree().current_scene.get_node_or_null("BloodDecals")
+	if not blood_decals:
+		Log.warn("Enemy: BloodDecals not found in scene!")
+
 func _init_movement():
 	match movement_type:
 		MovementType.FLANK:
@@ -90,25 +105,30 @@ func set_player(p):
 	player = p
 
 func _physics_process(delta: float) -> void:
-	if is_dead or is_stunned or player == null or movement_type == MovementType.STATIONARY:
+	if is_dead:
 		return
 	
-	# Calculate target position based on movement type
-	var target_pos = _calculate_target_position(delta)
+	_apply_gravity(delta)
 	
-	# Find nearby enemies for avoidance
-	_update_nearby_enemies()
-	
-	# Apply avoidance
-	var avoidance = _calculate_avoidance_adjustment()
-	target_pos += avoidance
-	
-	# Update navigation target (only if changed significantly)
-	if nav_agent.target_position.distance_to(target_pos) > 1.0:
-		nav_agent.target_position = target_pos
-	
-	# Execute movement
-	_execute_movement(delta)
+	if not is_stunned and player != null and movement_type != MovementType.STATIONARY:
+		# Calculate target position based on movement type
+		var target_pos = _calculate_target_position(delta)
+		
+		# Find nearby enemies for avoidance
+		_update_nearby_enemies()
+		
+		# Apply avoidance
+		var avoidance = _calculate_avoidance_adjustment()
+		target_pos += avoidance
+		
+		# Update navigation target (only if changed significantly)
+		if nav_agent.target_position.distance_to(target_pos) > 1.0:
+			nav_agent.target_position = target_pos
+		
+		# Execute movement
+		_execute_movement(delta)
+	else:
+		_apply_horizontal_damping(delta)
 	
 	move_and_slide()
 
@@ -139,7 +159,7 @@ func _calculate_target_position(delta: float) -> Vector3:
 
 func _execute_movement(delta: float) -> void:
 	if nav_agent.is_navigation_finished():
-		velocity = velocity.lerp(Vector3.ZERO, acceleration * delta)
+		_apply_horizontal_damping(delta)
 		return
 	
 	var next_path_pos = nav_agent.get_next_path_position()
@@ -165,7 +185,10 @@ func _execute_movement(delta: float) -> void:
 				current_speed = move_speed * lunge_speed_multiplier
 		
 		var target_velocity = dir * current_speed
-		velocity = velocity.lerp(target_velocity, acceleration * delta)
+		var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
+		horizontal_velocity = horizontal_velocity.lerp(target_velocity, acceleration * delta)
+		velocity.x = horizontal_velocity.x
+		velocity.z = horizontal_velocity.z
 		
 		# Rotate to face movement direction (except strafe which faces player)
 		if movement_type != MovementType.STRAFE:
@@ -173,7 +196,20 @@ func _execute_movement(delta: float) -> void:
 			if global_position.distance_to(look_target) > 0.1:
 				look_at(look_target, Vector3.UP)
 	else:
-		velocity = velocity.lerp(Vector3.ZERO, acceleration * delta)
+		_apply_horizontal_damping(delta)
+
+func _apply_gravity(delta: float) -> void:
+	if is_on_floor():
+		if velocity.y < 0.0:
+			velocity.y = 0.0
+	else:
+		velocity.y -= _gravity * delta
+
+func _apply_horizontal_damping(delta: float) -> void:
+	var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	horizontal_velocity = horizontal_velocity.lerp(Vector3.ZERO, acceleration * delta)
+	velocity.x = horizontal_velocity.x
+	velocity.z = horizontal_velocity.z
 
 func _pick_new_flank_offset() -> void:
 	var angle = randf() * TAU
@@ -224,7 +260,8 @@ func _play_hit_flash() -> void:
 
 func _apply_hit_stun():
 	is_stunned = true
-	velocity = Vector3.ZERO
+	velocity.x = 0.0
+	velocity.z = 0.0
 	if anim_player.has_animation("take_damage"):
 		anim_player.play("take_damage")
 	await get_tree().create_timer(hit_stun_duration).timeout
@@ -237,13 +274,13 @@ func _apply_hit_stun():
 	var current_time = Time.get_ticks_msec() / 1000.0
 	if current_time - last_blood_spray_time >= blood_spray_cooldown:
 		last_blood_spray_time = current_time
-		var damage_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
-		BloodDecalPool.spawn_blood_at_position(
-			global_position,
-			damage_direction,
-			get_tree().current_scene,
-			0.2  # Small intensity (0.2x scale)
-		)
+		if blood_decals:
+			var damage_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
+			blood_decals.spawn_blood_at_position(
+				global_position,
+				damage_direction,
+				false  # Not a death, just damage
+			)
 
 func _on_health_died():
 	die()
@@ -262,13 +299,13 @@ func die():
 		hurtbox.set_deferred("monitoring", false)
 	
 	# Spawn blood decals with damage intensity
-	var death_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
-	BloodDecalPool.spawn_blood_at_position(
-		global_position,
-		death_direction,
-		get_tree().current_scene,
-		damage_taken
-	)
+	if blood_decals:
+		var death_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
+		blood_decals.spawn_blood_at_position(
+			global_position,
+			death_direction,
+			true  # Is a death, spawn more + larger decals
+		)
 	
 	anim_player.play("die")
 	await anim_player.animation_finished

@@ -8,7 +8,7 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gpic1"]
 radius = 0.34472656
-height = 1.4233398
+height = 1.1756592
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_flash"]
 resource_local_to_scene = true
@@ -45,7 +45,7 @@ script = ExtResource("1_hbq6r")
 max_health = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1591999081]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28833008, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28467727, 0)
 shape = SubResource("CapsuleShape3D_gpic1")
 debug_color = Color(0, 0.6, 0.69803923, 1)
 

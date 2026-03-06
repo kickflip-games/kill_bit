@@ -93,7 +93,7 @@ Simple openable doors to create tension and break up sightlines.
 
 ### ✅ Blood Decals
 
-Pooled blood decals (`BloodDecalPool`) spawn on enemy hit and death. Intensity scales with damage taken.
+Blood and bullet decals use `DecalInstanceCompatibility` MultiMesh managers. Efficient rendering with automatic fade-out. Blood intensity scales with damage taken.
 
 ### Sin City Style
 
@@ -110,3 +110,12 @@ High-contrast ammo/health counters positioned in-world or on the weapon model.
 ### Muzzle Flash
 
 Billboard sprite flash at gun barrel on fire. Single bright-white frame.
+
+
+## Inspos
+
+- Sincity comicbooks
+- MadWorld (Wii)
+- Fallen aces (https://www.youtube.com/watch?v=eW80gudQ5lw)
+- Forgive me father 2 (https://www.youtube.com/watch?v=5H1PQT2XSwM)
+- https://www.youtube.com/watch?v=Y7mVylU9ULo

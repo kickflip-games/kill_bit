@@ -1,14 +1,16 @@
 [gd_scene format=3 uid="uid://b2gjcrk62b1x0"]
 
 [ext_resource type="Script" uid="uid://bnifwav1gguxr" path="res://scenes/weapons/HitScanWeapon.gd" id="1_nqevj"]
+[ext_resource type="PackedScene" uid="uid://0a5x1jcdfuh0" path="res://scenes/weapons/compat_bullet_decals.tscn" id="2_eo7p8"]
 
-[node name="Weapon" type="Node3D" unique_id=1064344690]
+[node name="Weapon" type="Node3D" unique_id=513418702]
 script = ExtResource("1_nqevj")
+max_ammo = 100
 
-[node name="RayCast3D" type="RayCast3D" parent="." unique_id=1413150658]
-target_position = Vector3(0, 0, -50)
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=304679335]
+target_position = Vector3(0, 0, -100)
 collision_mask = 3
-hit_from_inside = true
 collide_with_areas = true
-debug_shape_custom_color = Color(0, 0.7882353, 0, 1)
-debug_shape_thickness = 3
+
+[node name="BulletDecals" parent="." unique_id=1028905088 instance=ExtResource("2_eo7p8")]
+instance_count = 100
