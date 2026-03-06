@@ -43,7 +43,6 @@ var is_dead : bool = false
 var is_stunned : bool = false
 var damage_taken : float = 0.0  # Track total damage for blood intensity
 var last_blood_spray_time : float = -1.0  # Cooldown tracker
-var blood_decals  # BloodDecals
 
 # Movement state
 var nearby_enemies: Array[BaseEnemy] = []
@@ -67,9 +66,6 @@ func _ready() -> void:
 	if player == null:
 		player = get_tree().get_first_node_in_group("player")
 	
-	# Get reference to blood decal manager
-	call_deferred("_get_blood_decal_manager")
-	
 	if anim_player.has_animation("idle"):
 		anim_player.play("idle")
 	
@@ -86,12 +82,6 @@ func _setup_navigation():
 	await get_tree().physics_frame
 	nav_agent.path_desired_distance = 0.5
 	nav_agent.target_desired_distance = 0.5
-
-func _get_blood_decal_manager():
-	"""Find the BloodDecals in the scene tree"""
-	blood_decals = get_tree().current_scene.get_node_or_null("BloodDecals")
-	if not blood_decals:
-		Log.warn("Enemy: BloodDecals not found in scene!")
 
 func _init_movement():
 	match movement_type:
@@ -190,11 +180,7 @@ func _execute_movement(delta: float) -> void:
 		velocity.x = horizontal_velocity.x
 		velocity.z = horizontal_velocity.z
 		
-		# Rotate to face movement direction (except strafe which faces player)
-		if movement_type != MovementType.STRAFE:
-			var look_target = Vector3(next_path_pos.x, global_position.y, next_path_pos.z)
-			if global_position.distance_to(look_target) > 0.1:
-				look_at(look_target, Vector3.UP)
+		# No rotation needed - billboard sprites automatically face the camera
 	else:
 		_apply_horizontal_damping(delta)
 
@@ -274,13 +260,8 @@ func _apply_hit_stun():
 	var current_time = Time.get_ticks_msec() / 1000.0
 	if current_time - last_blood_spray_time >= blood_spray_cooldown:
 		last_blood_spray_time = current_time
-		if blood_decals:
-			var damage_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
-			blood_decals.spawn_blood_at_position(
-				global_position,
-				damage_direction,
-				false  # Not a death, just damage
-			)
+		var damage_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
+		FXManager.play_enemy_take_damage_fx(global_transform, damage_direction)
 
 func _on_health_died():
 	die()
@@ -298,14 +279,8 @@ func die():
 	if hurtbox:
 		hurtbox.set_deferred("monitoring", false)
 	
-	# Spawn blood decals with damage intensity
-	if blood_decals:
-		var death_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
-		blood_decals.spawn_blood_at_position(
-			global_position,
-			death_direction,
-			true  # Is a death, spawn more + larger decals
-		)
+	var death_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
+	FXManager.play_enemy_death_fx(global_transform, death_direction)
 	
 	anim_player.play("die")
 	await anim_player.animation_finished

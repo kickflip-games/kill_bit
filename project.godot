@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 GameManager="*uid://cgkrfvr7mec6k"
 SoundManager="*res://scenes/general/sound_manager.tscn"
 Log="*uid://b4w2rvoel3ush"
+FXManager="*uid://dm5hgv1id1wd0"
 
 [editor_plugins]
 

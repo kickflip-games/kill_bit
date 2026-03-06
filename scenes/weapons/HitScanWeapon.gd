@@ -10,6 +10,7 @@ const BULLET_TRACER_SCENE = preload("res://scenes/weapons/bullet_tracer.tscn")
 
 @onready var raycast = $RayCast3D
 @onready var bullet_decals_mesh:DecalInstanceCompatibility = $BulletDecals
+@onready var camera: Camera3D = get_parent().get_node_or_null("Camera3D")
 
 var can_fire = true
 var _next_decal_index := 0
@@ -23,27 +24,25 @@ func _ready() -> void:
 
 func fire():
 	Log.dbg("In wpn, firing starts")
-	if not can_fire or not can_shoot():
+	if not is_inside_tree() or not can_fire or not can_shoot():
 		Log.dbg("Cant fire yet..")
 		return
 		
 	can_fire = false
 	consume_ammo()
 	
-	raycast.force_raycast_update()
-	var hit_point: Vector3 = raycast.get_collision_point() if raycast.is_colliding() else raycast.to_global(raycast.target_position)
+	var shot := _perform_hitscan()
+	_create_tracer_effect(shot["origin"], shot["direction"], shot["hit_point"])
 	
-	_create_tracer_effect(hit_point)
-	
-	if raycast.is_colliding():
+	if shot["hit"]:
 		Log.dbg("Player hit enemy")
-		var target = raycast.get_collider()
+		var target = shot["collider"]
 		if target.has_method("take_damage"):
 			Log.dbg("Player hit enemy", {"target": target.name, "damage": damage})
 			target.take_damage(damage)
 
 		# Spawn bullet decal on hit surface
-		_spawn_bullet_decal()
+		_spawn_bullet_decal(shot["hit_point"], shot["hit_normal"], target)
 	
 	SoundManager.play_sfx(SoundManager.SFX_PLAYER_SHOOTS)
 	fired.emit()
@@ -52,16 +51,68 @@ func fire():
 	await get_tree().create_timer(fire_rate).timeout
 	can_fire = true
 
-func _spawn_bullet_decal() -> void:
-	var hit_collider = raycast.get_collider()
+func _perform_hitscan() -> Dictionary:
+	if not is_inside_tree() or get_world_3d() == null:
+		return {
+			"origin": global_position,
+			"direction": -global_basis.z.normalized(),
+			"hit": false,
+			"hit_point": global_position,
+			"hit_normal": Vector3.ZERO,
+			"collider": null
+		}
+
+	var origin: Vector3
+	var direction: Vector3
+	if camera and camera.is_inside_tree():
+		var screen_center := camera.get_viewport().get_visible_rect().size * 0.5
+		origin = camera.global_position
+		direction = camera.project_ray_normal(screen_center).normalized()
+	elif raycast and raycast.is_inside_tree():
+		origin = raycast.global_position
+		direction = -raycast.global_basis.z.normalized()
+	else:
+		origin = global_position
+		direction = -global_basis.z.normalized()
+	
+	var ray_length:float = raycast.target_position.length() if raycast else 100.0
+	if ray_length <= 0.0:
+		ray_length = 100.0
+	var end := origin + direction * ray_length
+	
+	var query := PhysicsRayQueryParameters3D.create(origin, end)
+	if raycast:
+		query.collision_mask = raycast.collision_mask
+		query.collide_with_areas = raycast.collide_with_areas
+		query.collide_with_bodies = raycast.collide_with_bodies
+	query.exclude = [self, get_parent()]
+	
+	var result := get_world_3d().direct_space_state.intersect_ray(query)
+	if result:
+		return {
+			"origin": origin,
+			"direction": direction,
+			"hit": true,
+			"hit_point": result.position,
+			"hit_normal": result.normal,
+			"collider": result.collider
+		}
+	
+	return {
+		"origin": origin,
+		"direction": direction,
+		"hit": false,
+		"hit_point": end,
+		"hit_normal": Vector3.ZERO,
+		"collider": null
+	}
+
+func _spawn_bullet_decal(hit_pos: Vector3, hit_normal: Vector3, hit_collider: Object) -> void:
 	# Only spawn decals on walls/environment, not on enemies
-	if hit_collider.has_method("take_damage"):
+	if hit_collider and hit_collider.has_method("take_damage"):
 		return
 	
 	SoundManager.play_sfx(SoundManager.SFX_BULLET_ENV)
-	
-	var hit_pos = raycast.get_collision_point()
-	var hit_normal = raycast.get_collision_normal()
 	_add_bullet_decal(hit_pos, hit_normal)
 
 func _add_bullet_decal(pos: Vector3, normal: Vector3) -> void:
@@ -93,18 +144,20 @@ func _make_decal_transform(pos: Vector3, normal: Vector3, decal_scale: float) ->
 	var b = Basis(rx, y_axis, rz).scaled(Vector3.ONE * decal_scale)
 	return Transform3D(b, pos + normal * 0.01)
 
-func _create_tracer_effect(hit_point: Vector3) -> void:
-	var start_origin := raycast.global_position
+func _create_tracer_effect(start_origin: Vector3, shot_direction: Vector3, hit_point: Vector3) -> void:
+	if not is_inside_tree():
+		return
+
 	var to_target := hit_point - start_origin
 	if to_target.is_zero_approx():
 		return
-	var bullet_dir := to_target.normalized()
+	var bullet_dir := shot_direction if not shot_direction.is_zero_approx() else to_target.normalized()
 	var start_pos := start_origin + bullet_dir * tracer_start_offset
 	if start_pos.distance_to(hit_point) <= tracer_min_distance:
 		return
 	
 	var tracer = BULLET_TRACER_SCENE.instantiate()
-	tracer.global_position = start_pos
+	var tracer_parent := get_tree().current_scene if get_tree().current_scene else self
+	tracer_parent.add_child(tracer)
 	tracer.target_pos = hit_point
-	tracer.look_at(hit_point)
-	get_tree().current_scene.add_child(tracer)
+	tracer.look_at_from_position(start_pos, hit_point)

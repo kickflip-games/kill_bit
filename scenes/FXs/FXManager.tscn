@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://dm5hgv1id1wd0"]
+
+[ext_resource type="Script" uid="uid://cvmo217jsifo5" path="res://scenes/FXs/fx_manager.gd" id="1_3uo24"]
+[ext_resource type="PackedScene" uid="uid://bdocctokflkc8" path="res://scenes/FXs/blood_decal/blood_decal_manager.tscn" id="2_858vd"]
+
+[node name="FxManager" type="Node" unique_id=1535670884]
+script = ExtResource("1_3uo24")
+
+[node name="BloodDecals" parent="." unique_id=1136667263 instance=ExtResource("2_858vd")]

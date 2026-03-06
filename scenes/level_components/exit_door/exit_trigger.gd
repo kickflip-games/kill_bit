@@ -1,6 +1,7 @@
 extends Area3D
 
 @export var one_shot = true
+@export_file("*.tscn") var next_level_path: String = ""
 
 var triggered = false
 
@@ -12,6 +13,8 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 
 	if body.has_method("trigger_win"):
-		body.trigger_win()
 		if one_shot:
 			triggered = true
+		body.trigger_win()
+		if next_level_path != "":
+			get_tree().call_deferred("change_scene_to_file", next_level_path)
