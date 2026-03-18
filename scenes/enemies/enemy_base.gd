@@ -2,6 +2,11 @@ extends CharacterBody3D
 class_name BaseEnemy
 
 const FLOOR_SNAP_LENGTH: float = 0.35
+const ENEMIES_GROUP: StringName = &"enemies"
+const ANIM_IDLE: StringName = &"idle"
+const ANIM_TAKE_DAMAGE: StringName = &"take_damage"
+const ANIM_DIE: StringName = &"die"
+const WAYPOINT_STUCK_THRESHOLD: float = 0.5
 
 enum MovementType {
 	STATIONARY,  ## No movement
@@ -51,8 +56,10 @@ var is_staggered : bool = false
 var damage_taken : float = 0.0  # Track total damage for blood intensity
 var last_blood_spray_time : float = -1.0  # Cooldown tracker
 var _stagger_tween: Tween = null
+var _hit_flash_tween: Tween = null
 var _stagger_blocked: bool = false  # Set during splash damage to suppress stagger
 var _knockback_velocity: Vector3 = Vector3.ZERO
+var _camera: Camera3D = null
 
 # Movement state
 var nearby_enemies: Array[BaseEnemy] = []
@@ -62,31 +69,27 @@ var strafe_angle: float = 0.0
 var strafe_direction: float = 1.0
 var strafe_speed: float = 2.0
 var _gravity: float = 9.8
+var _avoid_update_timer: float = 0.0
+const AVOID_UPDATE_INTERVAL: float = 0.15
 
 func _ready() -> void:
-	# Add to enemies group for GameManager communication
-	add_to_group("enemies")
+	add_to_group(ENEMIES_GROUP)
 	_gravity = float(ProjectSettings.get_setting("physics/3d/default_gravity"))
 	floor_snap_length = FLOOR_SNAP_LENGTH
-	
-	# Validate nav agent exists
+	_camera = get_viewport().get_camera_3d()
+
 	assert(nav_agent != null, "NavigationAgent3D not found on enemy!")
-	
-	# Fallback player lookup if not set yet
+
 	if player == null:
 		player = get_tree().get_first_node_in_group("player")
-	
-	if anim_player.has_animation("idle"):
-		anim_player.play("idle")
-	
-	# Connect health signals
+
+	if anim_player.has_animation(ANIM_IDLE):
+		anim_player.play(ANIM_IDLE)
+
 	health.died.connect(_on_health_died)
 	health.damaged.connect(_on_health_damaged)
-	
-	# Initialize movement based on type
+
 	_init_movement()
-	
-	# Setup navigation
 	call_deferred("_setup_navigation")
 
 	if is_procedural:
@@ -108,53 +111,46 @@ func _init_movement():
 func set_player(p):
 	player = p
 
+func _set_hurtbox_enabled(enabled: bool) -> void:
+	var hurtbox := get_node_or_null("Hurtbox") as Area3D
+	if hurtbox:
+		hurtbox.set_deferred("monitoring", enabled)
+
 func setup_as_sleeper() -> void:
 	process_mode = Node.PROCESS_MODE_DISABLED
 	hide()
 	velocity.x = 0.0
 	velocity.z = 0.0
-	var hurtbox := get_node_or_null("Hurtbox") as Area3D
-	if hurtbox:
-		hurtbox.set_deferred("monitoring", false)
+	_set_hurtbox_enabled(false)
 
 func wake_from_sleeper() -> void:
 	if is_dead:
 		return
 	process_mode = Node.PROCESS_MODE_INHERIT
 	show()
-	var hurtbox := get_node_or_null("Hurtbox") as Area3D
-	if hurtbox:
-		hurtbox.set_deferred("monitoring", true)
-	if anim_player and anim_player.has_animation("idle"):
-		anim_player.play("idle")
+	_set_hurtbox_enabled(true)
+	if anim_player and anim_player.has_animation(ANIM_IDLE):
+		anim_player.play(ANIM_IDLE)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
-	
+
 	_apply_gravity(delta)
-	
+
 	if not is_stunned and player != null and movement_type != MovementType.STATIONARY:
-		# Calculate target position based on movement type
 		var target_pos = _calculate_target_position(delta)
-		
-		# Find nearby enemies for avoidance
-		_update_nearby_enemies()
-		
-		# Apply avoidance
-		var avoidance = _calculate_avoidance_adjustment()
-		target_pos += avoidance
-		
-		# Update navigation target (only if changed significantly)
+
+		_update_nearby_enemies(delta)
+		target_pos += _calculate_avoidance_adjustment()
+
 		if nav_agent.target_position.distance_to(target_pos) > 1.0:
 			nav_agent.target_position = target_pos
-		
-		# Execute movement
+
 		_execute_movement(delta)
 	else:
 		_apply_horizontal_damping(delta)
 
-	# Apply and decay knockback
 	if _knockback_velocity.length() > 0.1:
 		velocity += _knockback_velocity
 		_knockback_velocity = _knockback_velocity.lerp(Vector3.ZERO, 10.0 * delta)
@@ -162,16 +158,14 @@ func _physics_process(delta: float) -> void:
 		_knockback_velocity = Vector3.ZERO
 
 	_face_sprite_to_camera()
-
 	move_and_slide()
 
 func _face_sprite_to_camera() -> void:
-	var camera := get_viewport().get_camera_3d()
-	if camera == null:
+	if _camera == null:
 		return
 
 	var sprite_pos := sprite_3d.global_position
-	var camera_pos := camera.global_position
+	var camera_pos := _camera.global_position
 	var target_pos := Vector3(camera_pos.x, sprite_pos.y, camera_pos.z)
 	if sprite_pos.distance_squared_to(target_pos) < 0.0001:
 		return
@@ -184,17 +178,15 @@ func _calculate_target_position(delta: float) -> Vector3:
 	match movement_type:
 		MovementType.DIRECT:
 			return player.global_position
-		
+
 		MovementType.FLANK:
-			# Update flank offset periodically
 			flank_timer += delta
 			if flank_timer >= flank_update_interval:
 				flank_timer = 0.0
 				_pick_new_flank_offset()
 			return player.global_position + flank_offset
-		
+
 		MovementType.STRAFE:
-			# Continuous orbit
 			strafe_angle += strafe_speed * strafe_direction * delta
 			var strafe_offset = Vector3(
 				cos(strafe_angle) * strafe_radius,
@@ -202,43 +194,38 @@ func _calculate_target_position(delta: float) -> Vector3:
 				sin(strafe_angle) * strafe_radius
 			)
 			return player.global_position + strafe_offset
-	
+
 	return player.global_position
 
 func _execute_movement(delta: float) -> void:
 	if nav_agent.is_navigation_finished():
 		_apply_horizontal_damping(delta)
 		return
-	
+
 	var next_path_pos = nav_agent.get_next_path_position()
-	
-	# Calculate horizontal direction (project to XZ plane)
+
 	var my_pos_2d = Vector3(global_position.x, 0, global_position.z)
 	var next_pos_2d = Vector3(next_path_pos.x, 0, next_path_pos.z)
 	var dir = next_pos_2d - my_pos_2d
-	
+
 	# If waypoint is stuck, move directly toward target
-	if dir.length() < 0.5:
+	if dir.length() < WAYPOINT_STUCK_THRESHOLD:
 		var target_2d = Vector3(nav_agent.target_position.x, 0, nav_agent.target_position.z)
 		dir = target_2d - my_pos_2d
-	
-	if dir.length() > 0.5:
+
+	if dir.length() > WAYPOINT_STUCK_THRESHOLD:
 		dir = dir.normalized()
-		
-		# Apply lunge speed boost for FLANK movement
+
 		var current_speed = move_speed
 		if movement_type == MovementType.FLANK:
-			var distance_to_player = global_position.distance_to(player.global_position)
-			if distance_to_player < lunge_distance:
+			if global_position.distance_squared_to(player.global_position) < lunge_distance * lunge_distance:
 				current_speed = move_speed * lunge_speed_multiplier
-		
+
 		var target_velocity = dir * current_speed
 		var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
 		horizontal_velocity = horizontal_velocity.lerp(target_velocity, acceleration * delta)
 		velocity.x = horizontal_velocity.x
 		velocity.z = horizontal_velocity.z
-		
-		# No rotation needed - billboard sprites automatically face the camera
 	else:
 		_apply_horizontal_damping(delta)
 
@@ -259,31 +246,34 @@ func _pick_new_flank_offset() -> void:
 	var angle = randf() * TAU
 	flank_offset = Vector3(cos(angle), 0, sin(angle)) * flank_radius
 
-func _update_nearby_enemies() -> void:
+func _update_nearby_enemies(delta: float) -> void:
+	_avoid_update_timer += delta
+	if _avoid_update_timer < AVOID_UPDATE_INTERVAL:
+		return
+	_avoid_update_timer = 0.0
+
 	nearby_enemies.clear()
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	for enemy in enemies:
+	var avoid_radius_sq = avoid_radius * avoid_radius
+	for enemy in get_tree().get_nodes_in_group(ENEMIES_GROUP):
 		if enemy != self and enemy is BaseEnemy:
-			var distance = global_position.distance_to(enemy.global_position)
-			if distance < avoid_radius:
+			if global_position.distance_squared_to(enemy.global_position) < avoid_radius_sq:
 				nearby_enemies.append(enemy)
 
 func _calculate_avoidance_adjustment() -> Vector3:
-	var adjustment = Vector3.ZERO
 	if nearby_enemies.is_empty():
-		return adjustment
-	
+		return Vector3.ZERO
+
+	var adjustment = Vector3.ZERO
 	for enemy in nearby_enemies:
-		var away_from = global_position.direction_to(enemy.global_position) * -1
-		adjustment += away_from
-	
+		adjustment += global_position.direction_to(enemy.global_position) * -1
+
 	adjustment = (adjustment / nearby_enemies.size()) * avoid_strength
 	adjustment.y = 0
 	return adjustment
 
 func take_damage(amount):
 	if is_dead: return
-	damage_taken += amount  # Track total damage taken
+	damage_taken += amount
 	if hit_particles:
 		hit_particles.restart()
 		hit_particles.emitting = true
@@ -299,22 +289,23 @@ func _play_hit_flash() -> void:
 	if not mat:
 		return
 	mat.set_shader_parameter("active", 1.0)
-	var tween := create_tween()
-	tween.tween_property(mat, "shader_parameter/active", 0.0, 0.15).set_ease(Tween.EASE_OUT)
+	if _hit_flash_tween:
+		_hit_flash_tween.kill()
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(mat, "shader_parameter/active", 0.0, 0.15).set_ease(Tween.EASE_OUT)
 
 func _apply_hit_stun():
 	is_stunned = true
 	velocity.x = 0.0
 	velocity.z = 0.0
-	if anim_player.has_animation("take_damage"):
-		anim_player.play("take_damage")
+	if anim_player.has_animation(ANIM_TAKE_DAMAGE):
+		anim_player.play(ANIM_TAKE_DAMAGE)
 	await get_tree().create_timer(hit_stun_duration).timeout
 	if not is_dead:
 		is_stunned = false
-		if anim_player.has_animation("idle"):
-			anim_player.play("idle")
-	
-	# Spawn small blood splatter when damaged (with cooldown to avoid spam)
+		if anim_player.has_animation(ANIM_IDLE):
+			anim_player.play(ANIM_IDLE)
+
 	var current_time = Time.get_ticks_msec() / 1000.0
 	if current_time - last_blood_spray_time >= blood_spray_cooldown:
 		last_blood_spray_time = current_time
@@ -347,7 +338,6 @@ func stagger() -> void:
 	if stagger_outline:
 		stagger_outline.show()
 
-	# Pulse red flash on main sprite
 	var mat := sprite_3d.material_override as ShaderMaterial
 	if mat:
 		mat.set_shader_parameter("flash_color", Color(1.0, 0.0, 0.0, 1.0))
@@ -355,7 +345,6 @@ func stagger() -> void:
 		_stagger_tween.tween_property(mat, "shader_parameter/active", 0.8, 0.3)
 		_stagger_tween.tween_property(mat, "shader_parameter/active", 0.15, 0.3)
 
-	# Auto-unstagger after window expires
 	get_tree().create_timer(stagger_duration).timeout.connect(
 		func(): if is_instance_valid(self) and is_staggered: unstagger()
 	)
@@ -383,17 +372,13 @@ func die():
 	Log.info("Enemy died", {"enemy": name, "total_damage_taken": damage_taken, "kill_count": GameManager.kill_count + 1})
 	GameManager.register_kill()
 	SoundManager.play_enemy_death()
-	# Disable collision so the player can walk through the "corpse"
 	collision_layer = 0
 	collision_mask = 0
-	# Disable hurtbox so it stops dealing damage during the die animation
-	var hurtbox = get_node_or_null("Hurtbox")
-	if hurtbox:
-		hurtbox.set_deferred("monitoring", false)
-	
+	_set_hurtbox_enabled(false)
+
 	var death_direction = (player.global_position - global_position).normalized() if player else Vector3.FORWARD
 	FXManager.play_enemy_death_fx(global_transform, death_direction)
-	
-	anim_player.play("die")
+
+	anim_player.play(ANIM_DIE)
 	await anim_player.animation_finished
 	queue_free()
