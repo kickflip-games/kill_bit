@@ -10,7 +10,7 @@ Target platform: Web (Compatibility renderer).
 - `shader_type spatial` with `render_mode unshaded` on all enemy/character Sprite3Ds
 - Hit flash shader: `scenes/enemies/hit_flash.gdshader` (spatial, not canvas_item)
 - Speedlines: `scenes/player/speedlines.gdshader` (canvas_item on a CanvasLayer ColorRect)
-- Noir world shader: `scenes/shaders/noir_world.gdshader` — apply to MeshInstance3D geometry (walls, floors, doors); uses `light()` with adaptive circular halftone, Fresnel rim, 4-zone branchless B&W + blood red classification
+- Toon world shader: `scenes/shaders/toon_world.gdshader` — apply to MeshInstance3D geometry (walls, floors, doors); uses `light()` with stepped cel-shading bands (`cuts`, `wrap`, `steepness`, `shadow_lift`) + rim darkening; B&W output via `ALBEDO = vec3(1.0)` + quantized diffuse bands; replaces the old `noir_world.gdshader` screentone which swam in screen-space
 - Noir sprite shader: `scenes/shaders/noir_sprite.gdshader` — drop-in replacement for `hit_flash.gdshader` on enemy/pickup Sprite3D; same `active`/`flash_color` uniforms so `enemy_base.gd` needs no changes; desaturates sprite to B&W, preserves red channel for blood details
 - All Sprite3D materials need `resource_local_to_scene = true` for per-instance shader params
 - Level needs explicit `WorldEnvironment` + `DirectionalLight3D` — Compatibility has no free ambient light

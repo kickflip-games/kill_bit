@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c834rf8ckk4gx"]
+
+[ext_resource type="Script" uid="uid://b0jg5df82d8a3" path="res://scenes/level_components/navigation_helper/navi_util.gd" id="1_i0dpf"]
+
+[node name="NaviHelper" type="Node3D" unique_id=1611637653]
+script = ExtResource("1_i0dpf")

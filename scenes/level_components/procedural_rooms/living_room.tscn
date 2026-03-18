@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://b8bnbf7bch1s0"]
+
+[ext_resource type="Script" uid="uid://frbakedtxme" path="res://addons/SimpleDungeons/DungeonRoom3D.gd" id="1_y1oj8"]
+[ext_resource type="Texture2D" uid="uid://dqvyc0ok7chld" path="res://addons/SimpleDungeons/sample_assets/kenney-grey-checkerboard-cc0.png" id="2_bphhi"]
+[ext_resource type="Texture2D" uid="uid://djhy80eyqjqpv" path="res://addons/SimpleDungeons/sample_assets/kenney-dark-grey-checkboard-cc0.png" id="3_edxhr"]
+[ext_resource type="Script" path="res://scenes/general/enemy_marker.gd" id="4_emkr"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n0t7s"]
+albedo_texture = ExtResource("2_bphhi")
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_x7cu1"]
+albedo_texture = ExtResource("3_edxhr")
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_living"]
+vertices = PackedVector3Array(-14, -4.8, -9, 14, -4.8, -9, 14, -4.8, 9, -14, -4.8, 9)
+polygons = [PackedInt32Array(0, 1, 2), PackedInt32Array(0, 2, 3)]
+
+
+[sub_resource type="GDScript" id="GDScript_17gef"]
+script/source = "extends Node
+
+func _ready():
+	var room := get_parent()
+	if room and not room.dungeon_done_generating.is_connected(_on_living_room_dungeon_done_generating):
+		room.dungeon_done_generating.connect(_on_living_room_dungeon_done_generating)
+
+func remove_unused_doors():
+	for door in $\"..\".get_doors():
+		if door.get_room_leads_to() == null:
+			door.door_node.queue_free()
+
+func _on_living_room_dungeon_done_generating():
+	remove_unused_doors()
+"
+
+[node name="LivingRoom" type="Node3D" unique_id=1451978430]
+script = ExtResource("1_y1oj8")
+size_in_voxels = Vector3i(3, 1, 2)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=408761927]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 2.49155e-06, 0, 0)
+material_override = SubResource("StandardMaterial3D_n0t7s")
+use_collision = true
+size = Vector3(30, 10, 20)
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="CSGBox3D" unique_id=5204864]
+operation = 2
+size = Vector3(29.5, 9.5, 19.5)
+
+[node name="DOOR?_B_CUT" type="CSGBox3D" parent="CSGBox3D" unique_id=1958237602]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.75, 9.75)
+operation = 2
+size = Vector3(2, 4, 1)
+
+[node name="DOOR?_R2_CUT2" type="CSGBox3D" parent="CSGBox3D" unique_id=211710208]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 15, -2.75, -5)
+operation = 2
+size = Vector3(2, 4, 1)
+
+[node name="DOOR?_R1_CUT2" type="CSGBox3D" parent="CSGBox3D" unique_id=440196968]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 15, -2.75, 5)
+operation = 2
+size = Vector3(2, 4, 1)
+
+[node name="DOOR?_L2_CUT" type="CSGBox3D" parent="CSGBox3D" unique_id=608526104]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -15, -2.75, -5)
+operation = 2
+size = Vector3(2, 4, 1)
+
+[node name="DOOR?_L1_CUT" type="CSGBox3D" parent="CSGBox3D" unique_id=223053061]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -15, -2.75, 5)
+operation = 2
+size = Vector3(2, 4, 1)
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="." unique_id=1240698923]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 2.49155e-06, -4.825, 0)
+material_override = SubResource("StandardMaterial3D_x7cu1")
+use_collision = true
+size = Vector3(8, 0.2, 13)
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=1719190164]
+navigation_mesh = SubResource("NavigationMesh_living")
+
+
+[node name="EnemyMarkers" type="Node3D" parent="." unique_id=2038019830]
+script = ExtResource("4_emkr")
+
+[node name="Marker3D" type="Marker3D" parent="EnemyMarkers" unique_id=1532814634]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -4)
+
+[node name="Marker3D2" type="Marker3D" parent="EnemyMarkers" unique_id=183036916]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -4)
+
+[node name="Marker3D3" type="Marker3D" parent="EnemyMarkers" unique_id=1687373521]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 4)
+
+[node name="Marker3D4" type="Marker3D" parent="EnemyMarkers" unique_id=1428805726]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4)
+
+
+[node name="RemoveUnusedDoors" type="Node" parent="." unique_id=217027467]
+script = SubResource("GDScript_17gef")

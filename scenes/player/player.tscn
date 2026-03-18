@@ -10,8 +10,8 @@
 [ext_resource type="Shader" uid="uid://v7ye1wic67u1" path="res://scenes/player/speedlines.gdshader" id="7_speedlines"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
-radius = 0.25
-height = 1.0
+radius = 0.3515625
+height = 2.2180176
 
 [sub_resource type="Animation" id="Animation_5bwha"]
 length = 0.001
@@ -71,14 +71,16 @@ shader_parameter/animation_speed = 10.0
 [node name="Player" type="CharacterBody3D" unique_id=865191397]
 collision_layer = 4
 collision_mask = 35
+platform_floor_layers = 4278190081
 script = ExtResource("1_8afob")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1476398568]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.31992096, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1516392, 0)
 
 [node name="Health" parent="." unique_id=1026362721 instance=ExtResource("2_dovo2")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=198619715]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6090088, 0)
 shape = SubResource("CapsuleShape3D_dovo2")
 debug_color = Color(0.9137255, 0, 0.13333334, 1)
 

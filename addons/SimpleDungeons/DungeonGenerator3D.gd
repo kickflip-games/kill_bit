@@ -296,11 +296,34 @@ func _finalize_rooms(ready_callback = null) -> void:
 	if not rooms_container.is_inside_tree():
 		add_child(rooms_container)
 	rooms_container.owner = self.owner
+	var prev_quick_room_check_dict := _quick_room_check_dict if _quick_room_check_dict else {}
+	var prev_quick_corridors_check_dict := _quick_corridors_check_dict if _quick_corridors_check_dict else {}
+	_quick_room_check_dict = {}
+	_quick_corridors_check_dict = {}
+	var virtual_to_real: Dictionary = {}
 	for room in _rooms_placed.slice(0):
 		_rooms_placed.erase(room)
 		var unvirtualized = room.unvirtualize_and_free_clone_if_needed(rooms_container)
 		unvirtualized.owner = self.owner
 		_rooms_placed.push_back(unvirtualized)
+		virtual_to_real[room] = unvirtualized
+
+	for pos in prev_quick_room_check_dict:
+		_quick_room_check_dict[pos] = virtual_to_real.get(prev_quick_room_check_dict[pos], prev_quick_room_check_dict[pos])
+	for pos in prev_quick_corridors_check_dict:
+		_quick_corridors_check_dict[pos] = virtual_to_real.get(prev_quick_corridors_check_dict[pos], prev_quick_corridors_check_dict[pos])
+
+	for room in _rooms_placed:
+		var aabbi = room.get_grid_aabbi(false)
+		for x in aabbi.size.x: for y in aabbi.size.y: for z in aabbi.size.z:
+			var pos = aabbi.position + Vector3i(x, y, z)
+			if not _quick_room_check_dict.has(pos) and not _quick_corridors_check_dict.has(pos):
+				_quick_room_check_dict[pos] = room
+
+	for preplaced_room in get_preplaced_rooms():
+		var aabbi = preplaced_room.get_grid_aabbi(false)
+		for x in aabbi.size.x: for y in aabbi.size.y: for z in aabbi.size.z:
+			_quick_room_check_dict[aabbi.position + Vector3i(x, y, z)] = preplaced_room
 	for room in room_instances:
 		if room and is_instance_valid(room):
 			room.queue_free()
@@ -340,8 +363,6 @@ func _emit_done_signals():
 	for preplaced_room in find_children("*", "DungeonRoom3D", false):
 		preplaced_room.dungeon_done_generating.emit()
 	print("DungeonGenerator3D finished generating.")
-	for room in room_instances:
-		room.queue_free()
 	done_generating.emit()
 
 func _emit_failed_signal(): # So I can call_deferred
@@ -849,20 +870,16 @@ func get_grid_aabbi() -> AABBi:
 
 func get_room_at_pos(grid_pos : Vector3i) -> DungeonRoom3D:
 	if stage > BuildStage.CONNECT_ROOMS:
-		# Can use these vars for speedup if past the connect rooms stage where we set them.
-		# During finalization, virtual rooms are freed/replaced, so stale cache refs must be ignored.
+		 # Can use these vars for speedup if past the connect rooms stage where we set them
 		var quick_check = _quick_room_check_dict.get(grid_pos)
 		if quick_check and is_instance_valid(quick_check):
 			return quick_check
-		if quick_check:
-			_quick_room_check_dict.erase(grid_pos)
 		var quick_corridor = _quick_corridors_check_dict.get(grid_pos)
 		if quick_corridor and is_instance_valid(quick_corridor):
 			return quick_corridor
-		if quick_corridor:
-			_quick_corridors_check_dict.erase(grid_pos)
+		return null
 	for room in get_all_placed_and_preplaced_rooms():
-		if room and is_instance_valid(room) and room.get_grid_aabbi(false).contains_point(grid_pos):
+		if room.get_grid_aabbi(false).contains_point(grid_pos):
 			return room
 	return null
 	

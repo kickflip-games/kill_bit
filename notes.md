@@ -2,6 +2,15 @@
 
 ---
 
+## Commented-Out Features
+
+### Camera Pitch Tilt on Slopes
+
+Added automatic camera pitch-down when going down stairs/slopes (would let player aim at enemies below). Implementation works but doesn't feel clean enough — movement on slopes causes twitchy camera behavior. Commented out in `player.gd` but kept as reference if we want to revisit with smoothing or angle thresholds.
+Also makes the normal camera angle strange...
+
+---
+
 ## Phase 1 — Core Combat Feel
 
 ### ✅ Hit-Stun Mechanics
@@ -171,11 +180,94 @@ Task: Update the generator script to call a "Finalize" function on each room aft
 
 Detail: The generator should ensure all Area3D collision layers are set so they only detect the Player (Layer 1 or 2), not other enemies or projectiles.
 
+# HOOK 
+
+The Hook-Smash ("The Closer")
+
+1. The Combat Loop (The "Stagger" Rhythm)Combat follows a two-stage rhythm: Open with lead, Close with impact.
+
+Stage 1: The Opener (Gunplay)Standard gunfire deals damage. The enemy remains Grayscale. 
+
+Stage 2: The Stagger (The Window)When an enemy hits $50\%$ HP, they enter a Staggered State for a brief duration (e.g., $3$ seconds).
+Visual Tell: The enemy gains a Solid Red Outline and emits heavy red particles.
+
+Stage 3: The Execution (Hook-Smash) If the player clicks while hovering over a "Red" enemy within range, they launch toward them at high velocity.
+
+The Impact: Upon reaching the target, the enemy "shatters" or explodes in a burst of red blood decals.
+
+One-Button Context Logic
+The game determines the action based on the state of the target under the crosshair: Target 
+Grayscale-- shoot (Standard Fire)
+Pulsing Red and <15-- shoot Hook-Smash 
+
+
+
+
+
+# Enemy director
+
+Enemy Director — Overview
+The Enemy Director is a central system that controls when and where enemies spawn. Instead of each room spawning enemies independently, the Director manages pacing across the whole dungeon floor to create dynamic tension waves: calm → pressure → chaos → relief.
+
+Why Use an Enemy Director
+
+• Prevents empty or boring rooms and overcrowding.
+
+• Makes procedural levels feel intentional.
+
+• Creates dramatic pacing without scripted encounters.
+
+• Allows the game to adapt difficulty dynamically.
+
+Core Responsibilities
+
+• Maintains a maximum number of active enemies.
+
+• Spawns enemies over time instead of all at once.
+
+• Adjusts spawn rates based on player state.
+
+• Chooses which enemy type to spawn and selects locations in nearby rooms.
+
+• Stops spawning when combat intensity is high.
+
+Core Rules for Your Director
+
+1. Maintain a Local Enemy Population:
+
+  • Define a target number of enemies near the player (e.g., target = 6, max = 10).
+
+  • Director spawns more if the count is low.
+
+2. React to Player Conditions:
+
+  • If health is low: Reduce spawn rate, favor melee, allow recovery.
+
+  • If clearing quickly: Increase frequency, introduce shooters.
+
+  • If camping: Spawn nearby to force movement.
+
+The Loop
+
+Player moves → Director maintains ~N enemies nearby → New enemies spawn ahead/behind → Old enemies eventually die or despawn.
+Implementation Detail: Spawning
+
+• Spawn Locations: Use EnemyMarkers placed within rooms.
+
+  • This bypasses the need to manually calculate valid NavMesh positions.
+
+  • The Director selects active markers in nearby rooms to trigger spawns.
+
+
+## interesting crosshair
+https://godotshaders.com/shader/crosshair-custom-aim-2d-animated/
 
 ## Inspos
 
 - Sincity comicbooks
-- MadWorld (Wii)
+- MadWorld (Wii) (https://www.youtube.com/watch?v=rdqD7oTH6EM)
 - Fallen aces (https://www.youtube.com/watch?v=eW80gudQ5lw)
 - Forgive me father 2 (https://www.youtube.com/watch?v=5H1PQT2XSwM)
-- https://www.youtube.com/watch?v=Y7mVylU9ULo
+- Elliptical https://www.youtube.com/watch?v=Y7mVylU9ULo
+- post-void (https://www.youtube.com/watch?v=na5iRaNchMo)
+- ultrakill endless (https://www.youtube.com/watch?v=f8ZrE5lhgAo)

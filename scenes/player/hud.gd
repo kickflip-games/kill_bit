@@ -28,6 +28,7 @@ const SWAY_MAX: float = 18.0      # clamp sway so it doesn't fly off screen
 const SWAY_LERP: float = 7.0
 
 var player: CharacterBody3D
+var _weapon: Node = null
 var fade_timer = 0.0
 var fade_duration = 2.0
 var game_started = false
@@ -50,8 +51,8 @@ func _ready():
 			vignette.modulate.a = 0.0
 	
 	if player and player.has_node("Weapon"):
-		var weapon = player.get_node("Weapon")
-		weapon.ammo_changed.connect(_on_ammo_changed)
+		_weapon = player.get_node("Weapon")
+		_weapon.ammo_changed.connect(_on_ammo_changed)
 
 	$StartScreen/PanelContainer/VBoxContainer/StartButton.pressed.connect(_on_start_pressed)
 	$StartScreen/PanelContainer/VBoxContainer/OptionsButton.pressed.connect(_on_options_pressed)
@@ -69,6 +70,7 @@ func _ready():
 func _process(delta: float) -> void:
 	_update_speedlines(delta)
 	_update_weapon_bob_sway(delta)
+	_update_crosshair_tint()
 	# Handle vignette fade-out over time
 	if fade_timer > 0.0:
 		fade_timer -= delta
@@ -78,6 +80,12 @@ func _process(delta: float) -> void:
 			# Fade toward resting opacity
 			var target_opacity = resting_opacity
 			vignette.modulate.a = lerpf(vignette.modulate.a, target_opacity, delta / fade_duration)
+
+func _update_crosshair_tint() -> void:
+	if not game_started or not reticle or not _weapon:
+		return
+	var on_staggered: bool = _weapon.get("_crosshair_target_staggered") == true
+	reticle.modulate = Color(1.0, 0.15, 0.15) if on_staggered else Color(1.0, 1.0, 1.0)
 
 func _on_weapon_fired():
 	if not game_started:

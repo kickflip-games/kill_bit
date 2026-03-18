@@ -85,9 +85,17 @@ sky_mode = 1
 
 [node name="EnemyShooter3" parent="." unique_id=336758649 instance=ExtResource("1_ke2w7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8939466, 0, -4.1571493)
+fire_rate = 2.5
+burst_count = 3
+burst_delay = 0.12
+suppress_duration = 2.0
 
 [node name="EnemyShooter2" parent="." unique_id=973805143 instance=ExtResource("1_ke2w7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.459663, 0, 0)
+fire_rate = 2.5
+burst_count = 3
+burst_delay = 0.12
+suppress_duration = 2.0
 
 [node name="EnemyMelee2" parent="." unique_id=354697016 instance=ExtResource("8_ewkxc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7.7101164)
@@ -99,6 +107,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0661254, 0, 7.7101164)
 
 [node name="EnemyShooter" parent="." unique_id=467200188 instance=ExtResource("1_ke2w7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.515767, -0.039479017, 3.26729)
+fire_rate = 2.5
+burst_count = 3
+burst_delay = 0.12
+suppress_duration = 2.0
 
 [node name="Player" parent="." unique_id=865191397 instance=ExtResource("6_mca4d")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.062983, -0.49438572, 6.981759)

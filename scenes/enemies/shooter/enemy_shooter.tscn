@@ -1,76 +1,50 @@
 [gd_scene format=3 uid="uid://b55psnniystqb"]
 
-[ext_resource type="Script" uid="uid://bwkckyc8j0xmv" path="res://scenes/enemies/shooter/enemy_shooter.gd" id="1_hbq6r"]
-[ext_resource type="Texture2D" uid="uid://bv0jo5pobui0p" path="res://scenes/enemies/shooter/enemy_shooter.png" id="2_omrtk"]
-[ext_resource type="Script" uid="uid://cslg4ovgm0pfo" path="res://scenes/general/hurtbox.gd" id="2_u3ulv"]
-[ext_resource type="PackedScene" uid="uid://d0b80m8yh32d4" path="res://scenes/general/health.tscn" id="4_health"]
-[ext_resource type="Shader" uid="uid://4qwr5rd7irxm" path="res://scenes/enemies/hit_flash.gdshader" id="5_hitflash"]
+[ext_resource type="PackedScene" uid="uid://cnvjl1wfyxjp5" path="res://scenes/enemies/enemy.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://bwkckyc8j0xmv" path="res://scenes/enemies/shooter/enemy_shooter.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://bv0jo5pobui0p" path="res://scenes/enemies/shooter/enemy_shooter.png" id="3_tex"]
+[ext_resource type="Shader" uid="uid://4qwr5rd7irxm" path="res://scenes/enemies/hit_flash.gdshader" id="4_flash"]
+[ext_resource type="Shader" uid="uid://0vj05hi8x26k" path="res://scenes/enemies/stagger_outline.gdshader" id="5_stagout"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_gpic1"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_shooter"]
 radius = 0.34472656
 height = 1.1756592
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_flash"]
 resource_local_to_scene = true
 render_priority = 0
-shader = ExtResource("5_hitflash")
-shader_parameter/sprite_texture = ExtResource("2_omrtk")
+shader = ExtResource("4_flash")
+shader_parameter/sprite_texture = ExtResource("3_tex")
 shader_parameter/active = 0.0
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 
-[sub_resource type="Animation" id="Animation_omrtk"]
-resource_name = "die"
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_stagout"]
+resource_local_to_scene = true
+render_priority = -1
+shader = ExtResource("5_stagout")
+shader_parameter/sprite_texture = ExtResource("3_tex")
 
-[sub_resource type="Animation" id="Animation_tsc5k"]
-resource_name = "idle"
+[node name="EnemyShooter" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
 
-[sub_resource type="Animation" id="Animation_1pjik"]
-resource_name = "shoot"
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_o5pqp"]
-_data = {
-&"die": SubResource("Animation_omrtk"),
-&"idle": SubResource("Animation_tsc5k"),
-&"shoot": SubResource("Animation_1pjik")
-}
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_hbq6r"]
-
-[node name="EnemyShooter" type="CharacterBody3D" unique_id=336758649 groups=["enemies"]]
-collision_layer = 2
-collision_mask = 5
-script = ExtResource("1_hbq6r")
-
-[node name="Health" parent="." unique_id=521497584 instance=ExtResource("4_health")]
+[node name="Health" parent="."]
 max_health = 2
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1591999081]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28467727, 0)
-shape = SubResource("CapsuleShape3D_gpic1")
-debug_color = Color(0, 0.6, 0.69803923, 1)
+shape = SubResource("CapsuleShape3D_shooter")
 
-[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1676316258]
+[node name="Sprite3D" type="Sprite3D" parent="."]
 transform = Transform3D(0.53, 0, 0, 0, 0.53, 0, 0, 0, 0.53, 0, -0.20537436, 0)
 material_override = SubResource("ShaderMaterial_flash")
-billboard = 1
-transparent = false
-texture = ExtResource("2_omrtk")
-hframes = 5
-vframes = 2
+texture = ExtResource("3_tex")
 region_rect = Rect2(0, 0, 814, 1162)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=903111094]
-libraries/ = SubResource("AnimationLibrary_o5pqp")
+[node name="StaggerOutline" type="Sprite3D" parent="."]
+transform = Transform3D(0.557, 0, 0, 0, 0.557, 0, 0, 0, 0.557, 0, -0.20537436, 0)
+material_override = SubResource("ShaderMaterial_stagout")
+texture = ExtResource("3_tex")
+region_rect = Rect2(0, 0, 814, 1162)
 
-[node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=962179148]
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 avoidance_enabled = true
-
-[node name="Hurtbox" type="Area3D" parent="." unique_id=1706262128]
-collision_layer = 8
-collision_mask = 4
-script = ExtResource("2_u3ulv")
-delete_after = false
-repeat_cooldown = 0.5
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=287217916]
-shape = SubResource("SphereShape3D_hbq6r")

@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://c4xgckd2l8cxi"]
+
+[ext_resource type="Texture2D" uid="uid://b121ggid4mi7v" path="res://scenes/level_components/navigation_helper/arrow_sprites/File1.png" id="1_0oxv4"]
+[ext_resource type="Script" uid="uid://mjfons6hctju" path="res://scenes/level_components/navigation_helper/arrow_icon.gd" id="1_tewie"]
+
+[node name="ArrowIcon" type="Node3D" unique_id=2013002084]
+script = ExtResource("1_tewie")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1900055791]
+axis = 1
+texture = ExtResource("1_0oxv4")

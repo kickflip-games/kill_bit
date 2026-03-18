@@ -11,16 +11,29 @@ config_version=5
 [application]
 
 config/name="fps_2d"
-run/main_scene="uid://cgn46vylv31kl"
+run/main_scene="uid://7ty4hrhvguac"
 config/features=PackedStringArray("4.6")
 config/icon="res://icon.svg"
 
 [autoload]
 
 GameManager="*uid://cgkrfvr7mec6k"
+EnemyDirector="*res://scenes/general/enemy_director.gd"
 SoundManager="*res://scenes/general/sound_manager.tscn"
 Log="*uid://b4w2rvoel3ush"
 FXManager="*uid://dm5hgv1id1wd0"
+DebugMenu="*res://scenes/general/debug_menu/debug_menu.tscn"
+DebugFlyCamera="*res://scenes/general/debug_fly_camera.gd"
+
+[debug_draw_3d]
+
+settings/addon_root_folder="res://addons/debug_draw_3d"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
 
 [editor_plugins]
 

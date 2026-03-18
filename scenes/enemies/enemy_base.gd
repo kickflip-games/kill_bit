@@ -11,10 +11,15 @@ enum MovementType {
 }
 
 @export_group("Base Stats")
-@export var move_speed = 1.5
-@export var acceleration = 3.0
+@export var move_speed = 2.5
+@export var acceleration = 5.0
 @export var blood_spray_cooldown = 0.2  # Cooldown between damage blood sprays
 @export var hit_stun_duration: float = 0.2
+@export var is_procedural: bool = false
+
+@export_group("Stagger")
+@export var stagger_hp_ratio: float = 0.5  ## HP fraction at which enemy staggers
+@export var stagger_duration: float = 3.0  ## Seconds stagger window stays open
 
 @export_group("Movement")
 @export var movement_type: MovementType = MovementType.DIRECT
@@ -37,12 +42,17 @@ enum MovementType {
 @onready var health = $Health
 @onready var hit_particles: GPUParticles3D = get_node_or_null("HitParticles")
 @onready var sprite_3d: Sprite3D = $Sprite3D
+@onready var stagger_outline: Sprite3D = get_node_or_null("StaggerOutline")
 
 var player : Node3D
 var is_dead : bool = false
 var is_stunned : bool = false
+var is_staggered : bool = false
 var damage_taken : float = 0.0  # Track total damage for blood intensity
 var last_blood_spray_time : float = -1.0  # Cooldown tracker
+var _stagger_tween: Tween = null
+var _stagger_blocked: bool = false  # Set during splash damage to suppress stagger
+var _knockback_velocity: Vector3 = Vector3.ZERO
 
 # Movement state
 var nearby_enemies: Array[BaseEnemy] = []
@@ -71,12 +81,16 @@ func _ready() -> void:
 	
 	# Connect health signals
 	health.died.connect(_on_health_died)
+	health.damaged.connect(_on_health_damaged)
 	
 	# Initialize movement based on type
 	_init_movement()
 	
 	# Setup navigation
 	call_deferred("_setup_navigation")
+
+	if is_procedural:
+		setup_as_sleeper()
 
 func _setup_navigation():
 	await get_tree().physics_frame
@@ -93,6 +107,26 @@ func _init_movement():
 
 func set_player(p):
 	player = p
+
+func setup_as_sleeper() -> void:
+	process_mode = Node.PROCESS_MODE_DISABLED
+	hide()
+	velocity.x = 0.0
+	velocity.z = 0.0
+	var hurtbox := get_node_or_null("Hurtbox") as Area3D
+	if hurtbox:
+		hurtbox.set_deferred("monitoring", false)
+
+func wake_from_sleeper() -> void:
+	if is_dead:
+		return
+	process_mode = Node.PROCESS_MODE_INHERIT
+	show()
+	var hurtbox := get_node_or_null("Hurtbox") as Area3D
+	if hurtbox:
+		hurtbox.set_deferred("monitoring", true)
+	if anim_player and anim_player.has_animation("idle"):
+		anim_player.play("idle")
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -119,8 +153,32 @@ func _physics_process(delta: float) -> void:
 		_execute_movement(delta)
 	else:
 		_apply_horizontal_damping(delta)
-	
+
+	# Apply and decay knockback
+	if _knockback_velocity.length() > 0.1:
+		velocity += _knockback_velocity
+		_knockback_velocity = _knockback_velocity.lerp(Vector3.ZERO, 10.0 * delta)
+	else:
+		_knockback_velocity = Vector3.ZERO
+
+	_face_sprite_to_camera()
+
 	move_and_slide()
+
+func _face_sprite_to_camera() -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+
+	var sprite_pos := sprite_3d.global_position
+	var camera_pos := camera.global_position
+	var target_pos := Vector3(camera_pos.x, sprite_pos.y, camera_pos.z)
+	if sprite_pos.distance_squared_to(target_pos) < 0.0001:
+		return
+
+	sprite_3d.look_at(target_pos, Vector3.UP, true)
+	if stagger_outline:
+		stagger_outline.look_at(target_pos, Vector3.UP, true)
 
 func _calculate_target_position(delta: float) -> Vector3:
 	match movement_type:
@@ -266,8 +324,62 @@ func _apply_hit_stun():
 func _on_health_died():
 	die()
 
+func _on_health_damaged() -> void:
+	if _stagger_blocked or is_staggered or is_dead:
+		return
+	if health.current_health <= health.max_health * stagger_hp_ratio:
+		stagger()
+
+func apply_splash_damage(amount: int) -> void:
+	_stagger_blocked = true
+	take_damage(amount)
+	_stagger_blocked = false
+
+func apply_knockback(impulse: Vector3) -> void:
+	_knockback_velocity += impulse
+
+func stagger() -> void:
+	if is_staggered or is_dead:
+		return
+	is_staggered = true
+	Log.dbg("Enemy staggered", {"enemy": name, "hp": health.current_health})
+
+	if stagger_outline:
+		stagger_outline.show()
+
+	# Pulse red flash on main sprite
+	var mat := sprite_3d.material_override as ShaderMaterial
+	if mat:
+		mat.set_shader_parameter("flash_color", Color(1.0, 0.0, 0.0, 1.0))
+		_stagger_tween = create_tween().set_loops()
+		_stagger_tween.tween_property(mat, "shader_parameter/active", 0.8, 0.3)
+		_stagger_tween.tween_property(mat, "shader_parameter/active", 0.15, 0.3)
+
+	# Auto-unstagger after window expires
+	get_tree().create_timer(stagger_duration).timeout.connect(
+		func(): if is_instance_valid(self) and is_staggered: unstagger()
+	)
+
+func unstagger() -> void:
+	if not is_staggered:
+		return
+	is_staggered = false
+
+	if stagger_outline:
+		stagger_outline.hide()
+
+	if _stagger_tween:
+		_stagger_tween.kill()
+		_stagger_tween = null
+
+	var mat := sprite_3d.material_override as ShaderMaterial
+	if mat:
+		mat.set_shader_parameter("active", 0.0)
+		mat.set_shader_parameter("flash_color", Color(1.0, 1.0, 1.0, 1.0))
+
 func die():
 	is_dead = true
+	unstagger()
 	Log.info("Enemy died", {"enemy": name, "total_damage_taken": damage_taken, "kill_count": GameManager.kill_count + 1})
 	GameManager.register_kill()
 	SoundManager.play_enemy_death()

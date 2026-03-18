@@ -4,6 +4,7 @@ extends Weapon
 @export var fire_rate = 0.3
 @export var tracer_start_offset := 0.25
 @export var tracer_min_distance := 3.0
+@export var hook_range: float = 20.0
 
 const DECAL_LIFETIME = 8.0
 const BULLET_TRACER_SCENE = preload("res://scenes/weapons/bullet_tracer.tscn")
@@ -14,6 +15,8 @@ const BULLET_TRACER_SCENE = preload("res://scenes/weapons/bullet_tracer.tscn")
 
 var can_fire = true
 var _next_decal_index := 0
+var _crosshair_target_staggered: bool = false
+var _peek_frame: int = 0
 
 func _ready() -> void:
 	# Initialize bullet decals
@@ -22,18 +25,41 @@ func _ready() -> void:
 		bullet_decals_mesh.top_level = true
 		bullet_decals_mesh.multimesh.visible_instance_count = 0
 
+func _process(_delta: float) -> void:
+	# Throttled crosshair peek for HUD stagger feedback
+	_peek_frame += 1
+	if _peek_frame % 4 != 0 or not is_inside_tree() or get_world_3d() == null:
+		return
+	var shot := _perform_hitscan()
+	_crosshair_target_staggered = (
+		shot["hit"] and shot["collider"] != null
+		and shot["collider"].get("is_staggered") == true
+	)
+
 func fire():
 	Log.dbg("In wpn, firing starts")
 	if not is_inside_tree() or not can_fire or not can_shoot():
 		Log.dbg("Cant fire yet..")
 		return
-		
+
+	var shot := _perform_hitscan()
+
+	# Context logic: hook-smash if crosshair is on a staggered enemy in range
+	if shot["hit"] and shot["collider"] != null:
+		var target = shot["collider"]
+		var player_node = get_parent()
+		if (target.get("is_staggered") == true
+				and player_node and player_node.has_method("hook_smash")
+				and not player_node.is_hooking
+				and shot["hit_point"].distance_to(player_node.global_position) <= hook_range):
+			player_node.hook_smash(target)
+			return  # No ammo cost, no fire cooldown
+
 	can_fire = false
 	consume_ammo()
-	
-	var shot := _perform_hitscan()
+
 	_create_tracer_effect(shot["origin"], shot["direction"], shot["hit_point"])
-	
+
 	if shot["hit"]:
 		Log.dbg("Player hit enemy")
 		var target = shot["collider"]
@@ -43,7 +69,7 @@ func fire():
 
 		# Spawn bullet decal on hit surface
 		_spawn_bullet_decal(shot["hit_point"], shot["hit_normal"], target)
-	
+
 	SoundManager.play_sfx(SoundManager.SFX_PLAYER_SHOOTS)
 	fired.emit()
 	Log.dbg("Player hit nothing")
