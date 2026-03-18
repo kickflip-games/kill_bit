@@ -157,6 +157,8 @@ draw_pass_1 = SubResource("PlaneMesh_hit")
 libraries/ = SubResource("AnimationLibrary_base")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="." unique_id=1282109510]
+avoidance_enabled = true
+radius = 0.5
 
 [node name="Hurtbox" type="Area3D" parent="." unique_id=1120863173]
 collision_layer = 8

@@ -28,8 +28,6 @@ enum MovementType {
 
 @export_group("Movement")
 @export var movement_type: MovementType = MovementType.DIRECT
-@export var avoid_radius: float = 2.0  ## Distance to avoid other enemies
-@export var avoid_strength: float = 0.5  ## How much to weight avoidance
 
 @export_group("Flank Movement (Melee/Zombie)")
 @export var flank_radius: float = 3.0  ## Distance offset from player
@@ -62,15 +60,12 @@ var _knockback_velocity: Vector3 = Vector3.ZERO
 var _camera: Camera3D = null
 
 # Movement state
-var nearby_enemies: Array[BaseEnemy] = []
 var flank_offset: Vector3 = Vector3.ZERO
 var flank_timer: float = 0.0
 var strafe_angle: float = 0.0
 var strafe_direction: float = 1.0
 var strafe_speed: float = 2.0
 var _gravity: float = 9.8
-var _avoid_update_timer: float = 0.0
-const AVOID_UPDATE_INTERVAL: float = 0.15
 
 func _ready() -> void:
 	add_to_group(ENEMIES_GROUP)
@@ -140,9 +135,6 @@ func _physics_process(delta: float) -> void:
 
 	if not is_stunned and player != null and movement_type != MovementType.STATIONARY:
 		var target_pos = _calculate_target_position(delta)
-
-		_update_nearby_enemies(delta)
-		target_pos += _calculate_avoidance_adjustment()
 
 		if nav_agent.target_position.distance_to(target_pos) > 1.0:
 			nav_agent.target_position = target_pos
@@ -246,32 +238,6 @@ func _pick_new_flank_offset() -> void:
 	var angle = randf() * TAU
 	flank_offset = Vector3(cos(angle), 0, sin(angle)) * flank_radius
 
-func _update_nearby_enemies(delta: float) -> void:
-	_avoid_update_timer += delta
-	if _avoid_update_timer < AVOID_UPDATE_INTERVAL:
-		return
-	_avoid_update_timer = 0.0
-
-	nearby_enemies.clear()
-	var avoid_radius_sq = avoid_radius * avoid_radius
-	for enemy in get_tree().get_nodes_in_group(ENEMIES_GROUP):
-		if enemy != self and enemy is BaseEnemy:
-			if global_position.distance_squared_to(enemy.global_position) < avoid_radius_sq:
-				nearby_enemies.append(enemy)
-
-func _calculate_avoidance_adjustment() -> Vector3:
-	if nearby_enemies.is_empty():
-		return Vector3.ZERO
-
-	var adjustment = Vector3.ZERO
-	for enemy in nearby_enemies:
-		if not is_instance_valid(enemy):
-			continue
-		adjustment += global_position.direction_to(enemy.global_position) * -1
-
-	adjustment = (adjustment / nearby_enemies.size()) * avoid_strength
-	adjustment.y = 0
-	return adjustment
 
 func take_damage(amount):
 	if is_dead: return
