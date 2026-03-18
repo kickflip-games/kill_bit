@@ -109,6 +109,7 @@ _data = {
 }
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_base"]
+radius = 1.0
 
 [node name="Enemy" type="CharacterBody3D" unique_id=1614568655 groups=["enemies"]]
 collision_layer = 2
