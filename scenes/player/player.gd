@@ -111,7 +111,7 @@ func _shake_camera(strength: float) -> void:
 	_shake_strength = maxf(_shake_strength, strength)
 
 func take_damage(amount):
-	if not gameplay_active:
+	if not gameplay_active or is_hooking:
 		return
 	health.take_damage(amount)
 	Log.dbg("Player took damage", {"amount": amount, "hp_remaining": health.current_health})
