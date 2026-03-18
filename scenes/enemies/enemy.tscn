@@ -112,7 +112,7 @@ _data = {
 
 [node name="Enemy" type="CharacterBody3D" unique_id=1614568655 groups=["enemies"]]
 collision_layer = 2
-collision_mask = 5
+collision_mask = 7
 script = ExtResource("1_base")
 
 [node name="Health" parent="." unique_id=582232111 instance=ExtResource("4_health")]

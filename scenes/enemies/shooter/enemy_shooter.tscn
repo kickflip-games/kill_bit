@@ -2,49 +2,12 @@
 
 [ext_resource type="PackedScene" uid="uid://cnvjl1wfyxjp5" path="res://scenes/enemies/enemy.tscn" id="1_base"]
 [ext_resource type="Script" uid="uid://bwkckyc8j0xmv" path="res://scenes/enemies/shooter/enemy_shooter.gd" id="2_script"]
-[ext_resource type="Texture2D" uid="uid://bv0jo5pobui0p" path="res://scenes/enemies/shooter/enemy_shooter.png" id="3_tex"]
-[ext_resource type="Shader" uid="uid://4qwr5rd7irxm" path="res://scenes/enemies/hit_flash.gdshader" id="4_flash"]
-[ext_resource type="Shader" uid="uid://0vj05hi8x26k" path="res://scenes/enemies/stagger_outline.gdshader" id="5_stagout"]
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_shooter"]
-radius = 0.34472656
-height = 1.1756592
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_flash"]
-resource_local_to_scene = true
-render_priority = 0
-shader = ExtResource("4_flash")
-shader_parameter/sprite_texture = ExtResource("3_tex")
-shader_parameter/active = 0.0
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_stagout"]
-resource_local_to_scene = true
-render_priority = -1
-shader = ExtResource("5_stagout")
-shader_parameter/sprite_texture = ExtResource("3_tex")
 
 [node name="EnemyShooter" instance=ExtResource("1_base")]
 script = ExtResource("2_script")
 
 [node name="Health" parent="."]
 max_health = 2
-
-[node name="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28467727, 0)
-shape = SubResource("CapsuleShape3D_shooter")
-
-[node name="Sprite3D" parent="."]
-transform = Transform3D(0.53, 0, 0, 0, 0.53, 0, 0, 0, 0.53, 0, -0.20537436, 0)
-material_override = SubResource("ShaderMaterial_flash")
-texture = ExtResource("3_tex")
-region_rect = Rect2(0, 0, 814, 1162)
-
-[node name="StaggerOutline" parent="."]
-transform = Transform3D(0.557, 0, 0, 0, 0.557, 0, 0, 0, 0.557, 0, -0.20537436, 0)
-material_override = SubResource("ShaderMaterial_stagout")
-texture = ExtResource("3_tex")
-region_rect = Rect2(0, 0, 814, 1162)
 
 [node name="NavigationAgent3D" parent="."]
 avoidance_enabled = true
