@@ -287,6 +287,7 @@ func add_pickup(type, amount):
 		0: # Health (Matches PickupType.HEALTH)
 			if health:
 				health.current_health = mini(health.current_health + amount, health.max_health)
+				hud.sync_health_bar()
 				Log.info("Pickup collected", {"type": "HEALTH", "amount": amount, "new_health": health.current_health})
 		1: # Ammo (Matches PickupType.AMMO)
 			if weapon:

@@ -4,7 +4,7 @@ signal start_game_requested
 signal game_over
 
 @onready var anim_player = $AnimationPlayer
-@onready var hp_label = $HpLabel
+@onready var health_bar = $HealthBar
 @onready var ammo_label = $AmmoLabel
 @onready var vignette = $VignetteOverlay
 @onready var start_screen = $StartScreen
@@ -45,8 +45,7 @@ func _ready():
 		var health = player.get_node("Health")
 		health.damaged.connect(_on_player_damaged)
 		health.died.connect(_on_player_died)
-		if hp_label:
-			update_hp_display()
+		sync_health_bar()
 		if vignette:
 			vignette.modulate.a = 0.0
 	
@@ -95,7 +94,7 @@ func _on_weapon_fired():
 func _on_player_damaged():
 	if not game_started:
 		return
-	update_hp_display()
+	sync_health_bar()
 	show_damage_vignette()
 
 func _on_player_died():
@@ -105,12 +104,20 @@ func _on_player_died():
 	_show_end_screen("You Died")
 	emit_signal("game_over")
 
-func update_hp_display():
-	if not hp_label or not player.has_node("Health"):
+func sync_health_bar():
+	if not is_instance_valid(health_bar) or not player.has_node("Health"):
+		return
+	if not health_bar.has_method("set_value"):
 		return
 	
 	var health = player.get_node("Health")
-	hp_label.text = str(health.current_health)
+	var max_health := float(health.max_health)
+	if max_health <= 0.0:
+		return
+	var hp_percent := (float(health.current_health) / max_health) * 100.0
+	health_bar.min_value = 0.0
+	health_bar.max_value = 100.0
+	health_bar.value = hp_percent
 
 func _on_ammo_changed(current_ammo: int, max_ammo: int):
 	if not ammo_label:
@@ -118,13 +125,20 @@ func _on_ammo_changed(current_ammo: int, max_ammo: int):
 	ammo_label.text = str(current_ammo) + "/" + str(max_ammo)
 
 func calculate_resting_opacity() -> float:
-	if not player.has_node("Health"):
+	var health_ratio = _get_health_ratio()
+	if health_ratio < 0.0:
 		return 0.0
-	
-	var health = player.get_node("Health")
-	var health_percent = float(health.current_health) / float(health.max_health)
 	# Opacity increases as health decreases (inverse of health percent)
-	return 1.0 - health_percent
+	return 1.0 - health_ratio
+
+func _get_health_ratio() -> float:
+	if not player.has_node("Health"):
+		return -1.0
+
+	var health = player.get_node("Health")
+	if health.max_health <= 0:
+		return -1.0
+	return float(health.current_health) / float(health.max_health)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
@@ -206,9 +220,10 @@ func _on_start_pressed():
 	end_screen.visible = false
 	gun_control.visible = true
 	reticle.visible = true
-	hp_label.visible = true
+	health_bar.visible = true
 	ammo_label.visible = true
 	vignette.visible = true
+	sync_health_bar()
 	emit_signal("start_game_requested")
 
 func _on_options_pressed():
@@ -222,7 +237,7 @@ func _show_start_screen():
 	end_screen.visible = false
 	gun_control.visible = false
 	reticle.visible = false
-	hp_label.visible = false
+	health_bar.visible = false
 	ammo_label.visible = false
 	vignette.visible = false
 
@@ -232,4 +247,5 @@ func _show_end_screen(title: String):
 	start_screen.visible = false
 	gun_control.visible = false
 	reticle.visible = false
+	health_bar.visible = false
 	ammo_label.visible = false

@@ -5,6 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://b2gjcrk62b1x0" path="res://scenes/weapons/weapon.tscn" id="3_gmlin"]
 [ext_resource type="Script" uid="uid://bxqn8v7lvofxb" path="res://scenes/player/hud.gd" id="4_75vfm"]
 [ext_resource type="Texture2D" uid="uid://bwclduea7lrdp" path="res://scenes/player/hands.png" id="4_p47bc"]
+[ext_resource type="Script" uid="uid://du0fa3jydyrk7" path="res://addons/health_bar_x/runtime/health_bar_x_control.gd" id="5_healthbar_script"]
+[ext_resource type="Resource" path="res://scenes/player/health_bar_style.tres" id="5_bar_style"]
 [ext_resource type="Texture2D" uid="uid://b4hxf7cxdcl71" path="res://scenes/player/reticle.png" id="5_75vfm"]
 [ext_resource type="Texture2D" uid="uid://dsvuti1bko427" path="res://scenes/player/hurt_vignette.png" id="6_vignette"]
 [ext_resource type="Shader" uid="uid://v7ye1wic67u1" path="res://scenes/player/speedlines.gdshader" id="7_speedlines"]
@@ -128,11 +130,12 @@ metadata/_edit_use_anchors_ = true
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Hud" unique_id=998041333]
 libraries/ = SubResource("AnimationLibrary_xpwvb")
 
-[node name="HpLabel" type="Label" parent="Hud" unique_id=999000001]
-offset_right = 100.0
-offset_bottom = 40.0
-theme_override_font_sizes/font_size = 32
-text = "10"
+[node name="HealthBar" type="Control" parent="Hud" unique_id=999000001]
+script = ExtResource("5_healthbar_script")
+custom_minimum_size = Vector2(160, 20)
+offset_right = 160.0
+offset_bottom = 20.0
+style = ExtResource("5_bar_style")
 
 [node name="AmmoLabel" type="Label" parent="Hud" unique_id=999000004]
 anchors_preset = 1

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" uid="uid://c0cbsh465qi30" path="res://addons/health_bar_x/runtime/health_bar_x_style.gd" id="1_style"]
+
+[resource]
+script = ExtResource("1_style")
+background_color = Color(0.05, 0.05, 0.05, 1)
+fill_color = Color(0.95, 0.95, 0.95, 1)
+use_threshold_colors = true
+threshold_red_max = 25.0
+threshold_orange_max = 60.0
+color_red = Color(0.9, 0.1, 0.1, 1)
+color_orange = Color(0.96, 0.96, 0.96, 1)
+color_green = Color(1, 1, 1, 1)
+border_enabled = true
+border_thickness = 2
+border_color = Color(1, 1, 1, 1)
+label_enabled = false
+animation_enabled = true
+animation_duration = 0.18
+animation_duration_decrease = 0.12

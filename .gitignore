@@ -41,4 +41,5 @@ __pycache__/
 # Project-specific
 *.log
 .env
-.env.local
+.env.local.claude
+.claude/

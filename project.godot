@@ -37,7 +37,7 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/SimpleDungeons/plugin.cfg", "res://addons/decal_compatibility/plugin.cfg", "res://addons/logger/plugin.cfg", "res://addons/minimize_html_build/plugin.cfg", "res://addons/roommate/plugin.cfg")
+enabled=PackedStringArray("res://addons/SimpleDungeons/plugin.cfg", "res://addons/decal_compatibility/plugin.cfg", "res://addons/health_bar_x/plugin.cfg", "res://addons/logger/plugin.cfg", "res://addons/minimize_html_build/plugin.cfg", "res://addons/roommate/plugin.cfg")
 
 [global_group]
 
