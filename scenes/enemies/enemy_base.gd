@@ -265,6 +265,8 @@ func _calculate_avoidance_adjustment() -> Vector3:
 
 	var adjustment = Vector3.ZERO
 	for enemy in nearby_enemies:
+		if not is_instance_valid(enemy):
+			continue
 		adjustment += global_position.direction_to(enemy.global_position) * -1
 
 	adjustment = (adjustment / nearby_enemies.size()) * avoid_strength
