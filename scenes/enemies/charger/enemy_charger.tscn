@@ -13,12 +13,12 @@ script = ExtResource("2_script")
 [node name="Health" parent="."]
 max_health = 5
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.079390824, 0)
 shape = SubResource("CapsuleShape3D_charger")
 
-[node name="Sprite3D" type="Sprite3D" parent="."]
+[node name="Sprite3D" parent="."]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
 
-[node name="StaggerOutline" type="Sprite3D" parent="."]
+[node name="StaggerOutline" parent="."]
 transform = Transform3D(0.525, 0, 0, 0, 0.525, 0, 0, 0, 0.525, 0, 0, 0)

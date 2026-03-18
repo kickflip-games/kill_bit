@@ -10,12 +10,12 @@ height = 3.53714
 [node name="EnemyMelee" instance=ExtResource("1_base")]
 script = ExtResource("2_script")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18194515, 0)
 shape = SubResource("CapsuleShape3D_melee")
 
-[node name="Sprite3D" type="Sprite3D" parent="."]
+[node name="Sprite3D" parent="."]
 transform = Transform3D(1.1936028, 0, 0, 0, 1.5558573, 0, 0, 0, 0.5, 0, 0, 0)
 
-[node name="StaggerOutline" type="Sprite3D" parent="."]
+[node name="StaggerOutline" parent="."]
 transform = Transform3D(1.2532829, 0, 0, 0, 1.6336501, 0, 0, 0, 0.525, 0, 0, 0)

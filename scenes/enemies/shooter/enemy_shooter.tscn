@@ -30,21 +30,21 @@ script = ExtResource("2_script")
 [node name="Health" parent="."]
 max_health = 2
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28467727, 0)
 shape = SubResource("CapsuleShape3D_shooter")
 
-[node name="Sprite3D" type="Sprite3D" parent="."]
+[node name="Sprite3D" parent="."]
 transform = Transform3D(0.53, 0, 0, 0, 0.53, 0, 0, 0, 0.53, 0, -0.20537436, 0)
 material_override = SubResource("ShaderMaterial_flash")
 texture = ExtResource("3_tex")
 region_rect = Rect2(0, 0, 814, 1162)
 
-[node name="StaggerOutline" type="Sprite3D" parent="."]
+[node name="StaggerOutline" parent="."]
 transform = Transform3D(0.557, 0, 0, 0, 0.557, 0, 0, 0, 0.557, 0, -0.20537436, 0)
 material_override = SubResource("ShaderMaterial_stagout")
 texture = ExtResource("3_tex")
 region_rect = Rect2(0, 0, 814, 1162)
 
-[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+[node name="NavigationAgent3D" parent="."]
 avoidance_enabled = true
