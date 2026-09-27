@@ -7,7 +7,7 @@ extends DungeonRoom3D
 var pressed_lever_down = false
 
 # Called when the node enters the scene tree for the first time.
-func _process(delta):
+func _process(_delta):
 	var has_character_body = false
 	for body in $Area3D.get_overlapping_bodies():
 		if body is CharacterBody3D:

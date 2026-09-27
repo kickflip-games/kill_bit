@@ -29,7 +29,7 @@ func setup_pickup() -> void:
 		PickupType.AMMO:
 			sprite.frame = ammo_frame
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 	sprite.position.y = sin(Time.get_ticks_msec() * 0.005) * 0.1

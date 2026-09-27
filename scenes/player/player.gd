@@ -184,7 +184,7 @@ func hook_smash(target: Node3D) -> void:
 	set_collision_mask_value(2, false)  # Pass through enemies during smash
 	Log.info("Hook-Smash launched", {"target": target.name})
 
-func _handle_hook_movement(delta: float) -> void:
+func _handle_hook_movement(_delta: float) -> void:
 	if not is_instance_valid(_hook_target) or _hook_target.is_dead:
 		_end_hook(false)
 		return

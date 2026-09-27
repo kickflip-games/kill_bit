@@ -1,5 +1,7 @@
 extends Weapon
 
+signal fired
+
 @export var damage = 1
 @export var fire_rate = 0.3
 @export var tracer_start_offset := 0.25

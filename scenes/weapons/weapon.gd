@@ -2,7 +2,6 @@ extends Node3D
 
 class_name Weapon
 
-signal fired
 signal ammo_changed(current_ammo: int, max_ammo: int)
 
 @export var max_ammo: int = 30

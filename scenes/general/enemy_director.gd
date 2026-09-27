@@ -109,7 +109,7 @@ func _update_intensity() -> void:
 
 	if total >= max_total or nearby >= target_nearby:
 		intensity = Intensity.CHAOS
-	elif nearby >= target_nearby / 2:
+	elif nearby >= float(target_nearby) / 2.0:
 		intensity = Intensity.PRESSURE
 	else:
 		intensity = Intensity.CALM
