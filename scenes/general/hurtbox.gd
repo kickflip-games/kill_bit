@@ -23,6 +23,10 @@ func _on_body_entered(body):
 		queue_free()
 
 func _process(delta):
+	# Dead enemies disable their hurtboxes; don't poll overlaps while monitoring is off.
+	if not monitoring:
+		return
+
 	# Update cooldown for persistent melee attacks
 	if repeat_cooldown > 0.0 and damage_cooldown_timer > 0.0:
 		damage_cooldown_timer -= delta

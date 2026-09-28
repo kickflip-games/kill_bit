@@ -7,6 +7,8 @@ signal fired
 @export var tracer_start_offset := 0.25
 @export var tracer_min_distance := 3.0
 @export var hook_range: float = 20.0
+@export_range(0.0, 30.0, 0.5) var lock_horizontal_degrees: float = 12.0
+@export_range(0.0, 45.0, 0.5) var lock_vertical_degrees: float = 25.0
 
 const DECAL_LIFETIME = 8.0
 const BULLET_TRACER_SCENE = preload("res://scenes/weapons/bullet_tracer.tscn")
@@ -18,6 +20,7 @@ const BULLET_TRACER_SCENE = preload("res://scenes/weapons/bullet_tracer.tscn")
 var can_fire = true
 var _next_decal_index := 0
 var _crosshair_target_staggered: bool = false
+var aim_assist_target: Node3D = null
 var _peek_frame: int = 0
 
 func _ready() -> void:
@@ -33,9 +36,14 @@ func _process(_delta: float) -> void:
 	if _peek_frame % 4 != 0 or not is_inside_tree() or get_world_3d() == null:
 		return
 	var shot := _perform_hitscan()
+	aim_assist_target = _find_lock_target(shot["origin"])
+	if aim_assist_target == null and shot["hit"] and shot["collider"] is Node3D:
+		var candidate := shot["collider"] as Node3D
+		if candidate.is_in_group("enemies") and candidate.get("is_dead") != true:
+			aim_assist_target = candidate
 	_crosshair_target_staggered = (
-		shot["hit"] and shot["collider"] != null
-		and shot["collider"].get("is_staggered") == true
+		aim_assist_target != null
+		and aim_assist_target.get("is_staggered") == true
 	)
 
 func fire():
@@ -45,17 +53,22 @@ func fire():
 		return
 
 	var shot := _perform_hitscan()
-
-	# Context logic: hook-smash if crosshair is on a staggered enemy in range
-	if shot["hit"] and shot["collider"] != null:
-		var target = shot["collider"]
-		var player_node = get_parent()
-		if (target.get("is_staggered") == true
-				and player_node and player_node.has_method("hook_smash")
-				and not player_node.is_hooking
-				and shot["hit_point"].distance_to(player_node.global_position) <= hook_range):
-			player_node.hook_smash(target)
+	var target := _find_lock_target(shot["origin"])
+	if target != null:
+		var target_point := _target_point(target)
+		if target.get("is_staggered") == true and not get_parent().is_hooking and target_point.distance_to(get_parent().global_position) <= hook_range:
+			get_parent().hook_smash(target)
 			return  # No ammo cost, no fire cooldown
+		shot["hit"] = true
+		shot["hit_point"] = target_point
+		shot["hit_normal"] = Vector3.ZERO
+		shot["direction"] = (target_point - shot["origin"]).normalized()
+		shot["collider"] = target
+	elif shot["hit"] and shot["collider"] is Node3D:
+		var direct_target := shot["collider"] as Node3D
+		if direct_target.is_in_group("enemies") and direct_target.get("is_staggered") == true and not get_parent().is_hooking and shot["hit_point"].distance_to(get_parent().global_position) <= hook_range:
+			get_parent().hook_smash(direct_target)
+			return
 
 	can_fire = false
 	consume_ammo()
@@ -64,13 +77,13 @@ func fire():
 
 	if shot["hit"]:
 		Log.dbg("Player hit enemy")
-		var target = shot["collider"]
-		if target.has_method("take_damage"):
-			Log.dbg("Player hit enemy", {"target": target.name, "damage": damage})
-			target.take_damage(damage)
+		var hit_target = shot["collider"]
+		if hit_target.has_method("take_damage"):
+			Log.dbg("Player hit enemy", {"target": hit_target.name, "damage": damage})
+			hit_target.take_damage(damage)
 
 		# Spawn bullet decal on hit surface
-		_spawn_bullet_decal(shot["hit_point"], shot["hit_normal"], target)
+		_spawn_bullet_decal(shot["hit_point"], shot["hit_normal"], hit_target)
 
 	SoundManager.play_sfx(SoundManager.SFX_PLAYER_SHOOTS)
 	fired.emit()
@@ -78,6 +91,47 @@ func fire():
 
 	await get_tree().create_timer(fire_rate).timeout
 	can_fire = true
+
+func _target_point(enemy: Node3D) -> Vector3:
+	var body_shape := enemy.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	return body_shape.global_position if body_shape else enemy.global_position
+
+func _find_lock_target(origin: Vector3) -> Node3D:
+	var best_score := INF
+	var best: Node3D = null
+	var space_state := get_world_3d().direct_space_state
+	var ray_length: float = raycast.target_position.length() if raycast else 100.0
+	for candidate in get_tree().get_nodes_in_group("enemies"):
+		var enemy := candidate as Node3D
+		if enemy == null or enemy.get("is_dead") == true:
+			continue
+		var point := _target_point(enemy)
+		var offset: Vector3 = point - origin
+		var distance := offset.length()
+		if distance > ray_length or distance < 0.01:
+			continue
+		var local_dir: Vector3 = camera.global_basis.inverse() * (offset / distance)
+		if local_dir.z >= 0.0:
+			continue
+		var horizontal_angle := absf(rad_to_deg(atan2(local_dir.x, -local_dir.z)))
+		var vertical_angle := absf(rad_to_deg(atan2(local_dir.y, -local_dir.z)) - get_parent().aim_pitch)
+		if horizontal_angle > lock_horizontal_degrees or vertical_angle > lock_vertical_degrees:
+			continue
+		if camera.is_position_behind(point) or not camera.get_viewport().get_visible_rect().has_point(camera.unproject_position(point)):
+			continue
+		var query := PhysicsRayQueryParameters3D.create(origin, point)
+		query.collision_mask = raycast.collision_mask
+		query.collide_with_areas = raycast.collide_with_areas
+		query.collide_with_bodies = raycast.collide_with_bodies
+		query.exclude = [self, get_parent()]
+		if space_state.intersect_ray(query).get("collider") != enemy:
+			continue
+		var score := horizontal_angle + vertical_angle + distance * 0.05
+		if score < best_score:
+			best_score = score
+			best = enemy
+	return best
+
 
 func _perform_hitscan() -> Dictionary:
 	if not is_inside_tree() or get_world_3d() == null:
@@ -93,8 +147,8 @@ func _perform_hitscan() -> Dictionary:
 	var origin: Vector3
 	var direction: Vector3
 	if camera and camera.is_inside_tree():
-		var screen_center := camera.get_viewport().get_visible_rect().size * 0.5
 		origin = camera.global_position
+		var screen_center := camera.get_viewport().get_visible_rect().size * 0.5
 		direction = camera.project_ray_normal(screen_center).normalized()
 	elif raycast and raycast.is_inside_tree():
 		origin = raycast.global_position

@@ -29,6 +29,7 @@ const SWAY_LERP: float = 7.0
 
 var player: CharacterBody3D
 var _weapon: Node = null
+var _aim_assist_indicator: TextureRect
 var fade_timer = 0.0
 var fade_duration = 2.0
 var game_started = false
@@ -64,12 +65,14 @@ func _ready():
 		_gun_base_pos = gun_sprite.position
 	_prev_player_rotation_y = player.rotation.y
 
+	_setup_aim_assist_indicator()
 	_show_start_screen()
 
 func _process(delta: float) -> void:
 	_update_speedlines(delta)
 	_update_weapon_bob_sway(delta)
 	_update_crosshair_tint()
+	_update_aim_assist_indicator()
 	# Handle vignette fade-out over time
 	if fade_timer > 0.0:
 		fade_timer -= delta
@@ -79,6 +82,49 @@ func _process(delta: float) -> void:
 			# Fade toward resting opacity
 			var target_opacity = resting_opacity
 			vignette.modulate.a = lerpf(vignette.modulate.a, target_opacity, delta / fade_duration)
+
+func _setup_aim_assist_indicator() -> void:
+	_aim_assist_indicator = TextureRect.new()
+	_aim_assist_indicator.name = "AimAssistIndicator"
+	_aim_assist_indicator.texture = load("res://scenes/player/lock-target.png") as Texture2D
+	_aim_assist_indicator.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_aim_assist_indicator.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_aim_assist_indicator.size = Vector2(64.0, 64.0)
+	_aim_assist_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aim_assist_indicator.z_index = 20
+	_aim_assist_indicator.hide()
+	add_child(_aim_assist_indicator)
+
+func _update_aim_assist_indicator() -> void:
+	if not game_started or not is_instance_valid(_weapon):
+		_aim_assist_indicator.hide()
+		return
+
+	var target := _weapon.get("aim_assist_target") as Node3D
+	if not is_instance_valid(target) or target.get("is_dead") == true:
+		_aim_assist_indicator.hide()
+		return
+
+	var camera := player.get_node_or_null("Camera3D") as Camera3D
+	if camera == null:
+		_aim_assist_indicator.hide()
+		return
+
+	var target_point := target.global_position
+	var body_shape := target.get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if body_shape:
+		target_point = body_shape.global_position
+	if camera.is_position_behind(target_point):
+		_aim_assist_indicator.hide()
+		return
+
+	var screen_point := camera.unproject_position(target_point)
+	if not get_viewport().get_visible_rect().has_point(screen_point):
+		_aim_assist_indicator.hide()
+		return
+
+	_aim_assist_indicator.position = screen_point - _aim_assist_indicator.size * 0.5
+	_aim_assist_indicator.show()
 
 func _update_crosshair_tint() -> void:
 	if not game_started or not reticle or not _weapon:

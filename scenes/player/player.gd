@@ -4,6 +4,7 @@ const MAX_SPEED = 8.0
 const ACCEL = 14.0
 const FRICTION = 14.0
 const MOUSE_SENS = 0.002
+const MAX_AIM_PITCH: float = 30.0
 const FLOOR_SNAP_LENGTH: float = 0.35
 
 const SHAKE_FIRE: float = 0.018
@@ -19,6 +20,8 @@ const HOOK_SPLASH_DAMAGE: int = 1
 const HOOK_SPLASH_KNOCKBACK: float = 10.0
 const HOOK_SLIDE_DURATION: float = 0.5
 const HOOK_SLIDE_FRICTION: float = 1.5
+@export var hook_exit_speed: float = 26.0
+@export_range(0.0, 1.0, 0.05) var hook_exit_vertical_fraction: float = 0.4
 
 const TILT_MAX: float = 0.25     # max tilt in radians (~14 degrees)
 const TILT_LERP: float = 8.0
@@ -40,10 +43,12 @@ var input_dir = Vector3.ZERO
 var gameplay_active = false
 var is_hooking: bool = false
 var _hook_target: Node3D = null
+var _hook_launch_direction: Vector3 = Vector3.ZERO
 var _hook_slide_timer: float = 0.0
 var _shake_strength: float = 0.0
 var _camera_base_pos: Vector3
 var camera_tilt: float = 0.0  # Exposed for HUD to sync gun rotation
+var aim_pitch: float = 0.0  # Hidden vertical target selection; the camera and reticle stay level.
 var _base_fov: float = 75.0
 var _gravity: float = 9.8
 
@@ -146,6 +151,7 @@ func _input(event):
 
 	if event is InputEventMouseMotion:
 		rotate_y(-event.relative.x * MOUSE_SENS)
+		aim_pitch = clampf(aim_pitch - rad_to_deg(event.relative.y * MOUSE_SENS), -MAX_AIM_PITCH, MAX_AIM_PITCH)
 	
 	if event is InputEventMouseButton and event.pressed:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -181,6 +187,7 @@ func _physics_process(delta):
 func hook_smash(target: Node3D) -> void:
 	is_hooking = true
 	_hook_target = target
+	_hook_launch_direction = global_position.direction_to(target.global_position)
 	set_collision_mask_value(2, false)  # Pass through enemies during smash
 	Log.info("Hook-Smash launched", {"target": target.name})
 
@@ -200,7 +207,8 @@ func _on_hook_impact() -> void:
 	var target := _hook_target
 	var impact_pos := target.global_position
 	_end_hook(false)
-	velocity.y = 0.0  # Don't carry vertical hook velocity into slide
+	var exit_direction := Vector3(_hook_launch_direction.x, _hook_launch_direction.y * hook_exit_vertical_fraction, _hook_launch_direction.z).normalized()
+	velocity = exit_direction * hook_exit_speed
 	_hook_slide_timer = HOOK_SLIDE_DURATION
 	if is_instance_valid(target) and not target.is_dead:
 		var spray_dir := global_position.direction_to(impact_pos)

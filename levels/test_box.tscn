@@ -1,0 +1,116 @@
+[gd_scene format=3 uid="uid://ckdbh7110nx3u"]
+
+[ext_resource type="Script" uid="uid://cn1xxlkjtuxik" path="res://levels/test_box.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://giwqconkotrq" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://3hg1hwcymhb" path="res://scenes/enemies/melee/enemy_melee.tscn" id="3_melee"]
+[ext_resource type="PackedScene" uid="uid://b55psnniystqb" path="res://scenes/enemies/shooter/enemy_shooter.tscn" id="4_shooter"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.12, 0.12, 0.12, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.55
+
+[sub_resource type="StandardMaterial3D" id="MatFloor"]
+albedo_color = Color(0.36, 0.36, 0.36, 1)
+
+[sub_resource type="StandardMaterial3D" id="MatWall"]
+albedo_color = Color(0.58, 0.58, 0.58, 1)
+
+[sub_resource type="StandardMaterial3D" id="MatObstacle"]
+albedo_color = Color(0.18, 0.18, 0.18, 1)
+
+[node name="TestBox" type="Node3D" unique_id=1079778647]
+script = ExtResource("1_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2108676088]
+environment = SubResource("Env")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1628780710]
+transform = Transform3D(0.8253356, 0.34171396, -0.44950274, 0, 0.7960838, 0.6051864, 0.5646425, -0.4994819, 0.6570363, 0, 0, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Floor" type="CSGBox3D" parent="." unique_id=1802116629]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+use_collision = true
+size = Vector3(18, 0.5, 20)
+material = SubResource("MatFloor")
+
+[node name="SouthWall" type="CSGBox3D" parent="." unique_id=1202692209]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 10.25)
+use_collision = true
+size = Vector3(18.5, 5, 0.5)
+material = SubResource("MatWall")
+
+[node name="NorthWall" type="CSGBox3D" parent="." unique_id=367265285]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -10.25)
+use_collision = true
+size = Vector3(18.5, 5, 0.5)
+material = SubResource("MatWall")
+
+[node name="WestWall" type="CSGBox3D" parent="." unique_id=1243236627]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.25, 2.5, 0)
+use_collision = true
+size = Vector3(0.5, 5, 20.5)
+material = SubResource("MatWall")
+
+[node name="EastWall" type="CSGBox3D" parent="." unique_id=865018965]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.25, 2.5, 0)
+use_collision = true
+size = Vector3(0.5, 5, 20.5)
+material = SubResource("MatWall")
+
+[node name="CentralBlock" type="CSGBox3D" parent="." unique_id=85982297]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -0.7)
+use_collision = true
+size = Vector3(4.5, 2.8, 3)
+material = SubResource("MatObstacle")
+
+[node name="Balcony" type="CSGBox3D" parent="." unique_id=1139114779]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4, 2.65, -7.4)
+use_collision = true
+size = Vector3(7.2, 0.3, 4.8)
+material = SubResource("MatWall")
+
+[node name="ReturnRamp" type="CSGBox3D" parent="." unique_id=467922506]
+transform = Transform3D(1, 0, 0, 0, 0.8869949, -0.46177918, 0, 0.46177918, 0.8869949, 6.1, 1.36, -4.4)
+use_collision = true
+size = Vector3(1.8, 0.28, 5.4)
+material = SubResource("MatWall")
+
+[node name="PlayerSpawn" type="Marker3D" parent="." unique_id=821665375]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.5, 8)
+
+[node name="Player" parent="PlayerSpawn" unique_id=609551257 instance=ExtResource("2_player")]
+
+[node name="MeleeSpawn" type="Marker3D" parent="." unique_id=849455394]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.3, 4)
+
+[node name="MeleeEnemy" parent="MeleeSpawn" unique_id=1982210865 instance=ExtResource("3_melee")]
+move_speed = 0.0
+stagger_hp_ratio = 1.0
+stagger_duration = 5.0
+
+[node name="ShooterSpawn" type="Marker3D" parent="." unique_id=1396388491]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 2.8, -5.9)
+
+[node name="ShooterEnemy" parent="ShooterSpawn" unique_id=1871513599 instance=ExtResource("4_shooter")]
+fire_rate = 2.5
+burst_count = 3
+burst_delay = 0.12
+suppress_duration = 2.0
+move_speed = 0.0
+stagger_hp_ratio = 1.0
+stagger_duration = 5.0
+
+[node name="TrialOverlay" type="CanvasLayer" parent="." unique_id=1939223074]
+
+[node name="Stopwatch" type="Label" parent="TrialOverlay" unique_id=89862453]
+offset_left = 510.0
+offset_top = 12.0
+offset_right = 770.0
+offset_bottom = 46.0
+theme_override_font_sizes/font_size = 22
+text = "00.00  |  F5 restart"

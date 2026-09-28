@@ -84,26 +84,27 @@ shadow_blur = 0.0
 sky_mode = 1
 
 [node name="EnemyShooter3" parent="." unique_id=336758649 instance=ExtResource("1_ke2w7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8939466, 0, -4.1571493)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 0, -5.5)
 fire_rate = 2.5
 burst_count = 3
 burst_delay = 0.12
 suppress_duration = 2.0
 
 [node name="EnemyShooter2" parent="." unique_id=973805143 instance=ExtResource("1_ke2w7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.459663, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -4)
 fire_rate = 2.5
 burst_count = 3
 burst_delay = 0.12
 suppress_duration = 2.0
 
 [node name="EnemyMelee2" parent="." unique_id=354697016 instance=ExtResource("8_ewkxc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7.7101164)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 11.5)
 
 [node name="EnemyMelee3" parent="." unique_id=89105776 instance=ExtResource("8_ewkxc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0661254, 0, 7.7101164)
 
 [node name="EnemyMelee" parent="." unique_id=1966302625 instance=ExtResource("8_ewkxc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0, -4.5)
 
 [node name="EnemyShooter" parent="." unique_id=467200188 instance=ExtResource("1_ke2w7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.515767, -0.039479017, 3.26729)
@@ -181,5 +182,25 @@ script = ExtResource("5_qd5dk")
 size = Vector3(1, 5, 2.1606395)
 extra_slots = Array[StringName]([&""])
 metadata/_custom_type_script = "uid://ma4j2xgggf85"
+
+[node name="TraversalCoverWest" type="CSGBox3D" parent="." unique_id=1083376790]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.65, 1.5)
+use_collision = true
+size = Vector3(3.5, 1.3, 0.9)
+
+[node name="TraversalCoverCenter" type="CSGBox3D" parent="." unique_id=171854744]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.65, -1.5)
+use_collision = true
+size = Vector3(4, 1.3, 0.9)
+
+[node name="TraversalCoverEast" type="CSGBox3D" parent="." unique_id=1799374439]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.65, 2.4)
+use_collision = true
+size = Vector3(3, 1.3, 0.9)
+
+[node name="TraversalCoverNorth" type="CSGBox3D" parent="." unique_id=1110964039]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.65, 8.5)
+use_collision = true
+size = Vector3(4, 1.3, 0.9)
 
 [editable path="ExitTrigger"]
